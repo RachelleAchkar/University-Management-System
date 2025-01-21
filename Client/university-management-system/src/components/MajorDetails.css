@@ -1,0 +1,119 @@
+.major-details-container {
+  text-align: center;
+  padding: 20px;
+  color: blue;
+}
+
+.buttons-container {
+  margin-top: 20px;
+}
+
+.details-button {
+  margin: 10px;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: 18px;
+  text-align: center;
+  cursor: pointer;
+  color: white; /* Text color */
+  background-color: #9aceff;
+  border: none; /* Remove the default border */
+  border-radius: 5px; /* Add rounded corners */
+  transition: background-color 0.3s ease; /* Smooth hover effect */
+}
+
+.details-button:hover {
+  background-color: #7492ff;
+  transform: scale(1.05);
+}
+.transcript {
+  font-family: Arial, sans-serif;
+  margin: 20px auto;
+  width: 90%;
+  max-width: 1200px;
+  padding: 20px;
+  background-color: #f9f9f9;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+.transcript h3 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+thead th {
+  background-color: #7492ff;
+  color: white;
+  padding: 10px;
+  text-align: left;
+  font-weight: bold;
+  border-bottom: 2px solid #0056b3;
+}
+
+tbody td {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+}
+
+tbody tr:nth-child(odd) {
+  background-color: #f2f2f2;
+}
+
+tbody tr:hover {
+  background-color: #e9f5ff;
+}
+
+.totals {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.totals h4 {
+  margin: 10px 0;
+  color: #191361;
+}
+
+.pass {
+  color: green;
+  font-weight: bold;
+}
+
+.fail {
+  color: red;
+  font-weight: bold;
+}
+.excellent {
+  color: darkblue;
+  font-weight: bold;
+}
+
+.satisfactory {
+  color: green;
+  font-weight: bold;
+}
+
+.pass1 {
+  color: orange;
+  font-weight: bold;
+}
+
+.fair {
+  color: #ff8000; /* Orange */
+  font-weight: bold;
+}
+
+.fail {
+  color: red;
+  font-weight: bold;
+}
