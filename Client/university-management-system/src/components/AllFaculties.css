@@ -1,0 +1,183 @@
+.faculties-container {
+    text-align: center;
+    margin: 20px;
+    font-family: Arial, sans-serif;
+  }
+  
+  .faculties-container h1 {
+    font-size: 24px;
+    color: #456aae;
+    margin-bottom: 20px;
+  }
+  
+  .faculties-list {
+    display: block; /* Change from flex to block */
+    text-align: center; /* Center the faculty boxes */
+    gap: 15px;
+  }
+  
+  .faculty-box {
+    margin-bottom: 15px;
+    background-color: #3773ab;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    font-size: 18px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.3s;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 80%; /* Set a specific width (you can adjust this value) */
+    max-width: 500px; /* Optional: Limit the maximum width */
+    margin-left: auto; /* Center the box horizontally */
+    margin-right: auto; /* Center the box horizontally */
+  }
+
+  .faculty-box:hover {
+    background-color: #7492ff;
+    transform: scale(1.05);
+  }
+  
+  .faculties-container p {
+    font-size: 18px;
+    color: #ffffff;
+  }
+  .add-faculty-button {
+    position: fixed; /* Makes the button fixed on the screen */
+    bottom: 20px;    /* Positions it 20px from the bottom */
+    right: 20px;     /* Positions it 20px from the right */
+    padding: 10px 20px;
+    background-color: #191361;
+    color: white;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+  
+  
+  .add-faculty-button:hover {
+    background-color: #5d45a0;
+  }
+  
+  .controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .search-bar {
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  .sort-dropdown {
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  .course-details {
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* Space between details */
+  }
+  
+  .course-detail {
+    display: flex;
+    justify-content: space-between;
+    font-size: 16px;
+    color:rgb(15, 8, 62);
+  }
+  
+  .course-detail span.label {
+    font-weight: bold;
+    color: white;
+  }
+
+  .search-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px; /* Space between elements */
+    margin-bottom: 20px;
+}
+
+.search-input {
+    width: 250px;
+    padding: 10px;
+    border: 2px solid #456aae;
+    border-radius: 5px;
+    font-size: 16px;
+    transition: all 0.3s ease-in-out;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #191361;
+    box-shadow: 0px 0px 8px rgba(25, 19, 97, 0.5);
+}
+
+.search-button, .clear-button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease-in-out, transform 0.2s;
+}
+
+.search-button {
+    background-color: #191361;
+    color: white;
+}
+
+.search-button:hover {
+    background-color: #5d45a0;
+    transform: scale(1.05);
+}
+
+.clear-button {
+    background-color: #f61900;
+    color: white;
+}
+
+.clear-button:hover {
+    background-color: #c0392b;
+    transform: scale(1.05);
+}
+.delete-button {
+  padding: 10px 20px;
+  background-color: #191361;
+  color: white;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.back-button {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background-color: #191361;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.back-button:hover {
+  background-color: #655fa9;
+}

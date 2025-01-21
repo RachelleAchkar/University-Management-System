@@ -1,0 +1,102 @@
+.containerOfSignIn {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background-color: #f0f3fa;
+  }
+  
+  .signInTitle {
+    color: #628ecb;
+    text-align: center;
+    font-size: 30px;
+  }
+  
+  .form {
+    position: relative;
+    width: 300px;
+    padding: 20px;
+    background-color: #d5deef;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .inputContainer {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-top: 10px;
+    align-items: center;
+  }
+  
+  .input1 {
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ffffff;
+    border-radius: 5px;
+    width: 100%;
+  }
+ 
+  .passwordContainer {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+  } 
+  
+  .signinbutton {
+    width: 100%;
+    padding: 10px;
+    background-color: #395886;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .signinbutton:hover {
+    background-color: #628ecb;
+  }
+  
+  .createaccount {
+    margin-top: 15px;
+    text-align: center;
+    color: #333;
+  }
+  
+  .createaccount a {
+    color: #395886;
+  }
+  
+  .createaccount a:hover {
+    color: #628ecb;
+  }
+  
+
+  
+  .eyeButton {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    position: absolute;
+    right: 0px;
+    top: 37%;
+    transform: translateY(-50%);
+  }
+  
+  .eyeButton:focus {
+    outline: none;
+  }
+  
+  .eyeButton i {
+    font-size: 1.2em;
+    color: #b3bbc8;
+  }
+  
+  .eyeButton:hover i {
+    color: #628ecb;
+  }
+  
