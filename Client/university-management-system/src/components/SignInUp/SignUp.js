@@ -4,8 +4,8 @@ import './SignIn.css';
 import 'font-awesome/css/font-awesome.min.css';
 
 const SignUp = () => {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [firstname, setFirstname] = useState('');
+  const [lastname, setLastname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -14,39 +14,34 @@ const SignUp = () => {
 
   const handleSignUp = async (e) => {
     e.preventDefault();
-    const admin = { firstName, lastName, email, password };
-
+    const admin = { firstname, lastname, email, password };
+  
+    console.log('Sending admin data:', admin);  // Log the data being sent
+  
     try {
-        const response = await fetch('http://localhost:8080/admin/signup', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(admin),
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            console.log('Sign-Up Successful:', data);
-            if (data.adminId) {
-                localStorage.setItem('adminId', data.adminId); // Save adminId to localStorage
-                alert('Sign-Up Successful!');
-                navigate('/', { state: { email, password } });
-            } else {
-                console.error('adminId is missing in the response');
-                alert('Sign-Up Failed! adminId not received.');
-            }
-        } else {
-            const errorMessage = await response.json();  // Get the error message from response
-            alert(`Sign-Up Failed: ${errorMessage.message}`);
-        }
+      const response = await fetch('http://localhost:8080/admin/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(admin),
+      });
+  
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Sign-Up Successful:', data);
+        alert('Sign-Up Successful!');
+        navigate('/', { state: { email, password } });
+      } else {
+        const errorMessage = await response.json();
+        alert(`Sign-Up Failed: ${errorMessage.message}`);
+      }
     } catch (error) {
-        console.error('Error during sign-up:', error);
-        alert('An error occurred. Please try again.');
+      console.error('Error during sign-up:', error);
+      alert('An error occurred. Please try again.');
     }
-};
-
-
+  };
+  
   const togglePasswordVisibility = () => {
     setPasswordVisible(!passwordVisible);
   };
@@ -60,8 +55,8 @@ const SignUp = () => {
             <input
               className="input1"
               type="text"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
+              value={firstname}
+              onChange={(e) => setFirstname(e.target.value)}
               required
               placeholder="First Name"
             />
@@ -70,8 +65,8 @@ const SignUp = () => {
             <input
               className="input1"
               type="text"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
+              value={lastname}
+              onChange={(e) => setLastname(e.target.value)}
               required
               placeholder="Last Name"
             />

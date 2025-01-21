@@ -13,28 +13,28 @@ const SignIn = () => {
 
     const handleSignIn = async (e) => {
         e.preventDefault();
+    
         try {
-            const response = await fetch("http://localhost:8080/admin/signin", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
+            const response = await fetch('http://localhost:8080/admin/signin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password }),
             });
-
+    
             if (response.ok) {
                 const data = await response.json();
-                console.log("Sign In successful", data);
-                localStorage.setItem('adminId', data.adminId);  // Save adminId to localStorage
-
-                alert("Sign-In Successful!");
-                navigate("/faculties");
+                localStorage.setItem('adminId', data.adminId);
+                alert('Sign-In Successful!');
+                navigate('/faculties');
             } else {
-                const errorMessage = await response.text();
-                alert(errorMessage);
+                const errorMessage = await response.json();
+                alert(`Sign-In Failed: ${errorMessage.message}`);
             }
         } catch (error) {
-            console.error("Error during sign-in:", error);
+            console.error('Error during sign-in:', error);
         }
     };
+    
 
     const togglePasswordVisibility = () => {
         setPasswordVisible(!passwordVisible);
