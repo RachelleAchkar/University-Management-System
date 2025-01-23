@@ -24,7 +24,7 @@ const AddCourse = () => {
   useEffect(() => {
     // Fetch instructors by majorId when the component mounts
     if (majorId) {
-      fetch(`http://localhost:8080/instructors/${majorId}`)
+      fetch(`http://localhost:8081/instructors/${majorId}`)
         .then(response => response.json())
         .then(data => {
           setInstructors(data);
@@ -62,7 +62,7 @@ const AddCourse = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    fetch('http://localhost:8080/courses/addCourse', {
+    fetch('http://localhost:8081/courses/addCourse', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

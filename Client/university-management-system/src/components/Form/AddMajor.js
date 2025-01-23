@@ -24,10 +24,10 @@ const AddMajor = ({ onMajorAdded }) => {
     const majorData = {
       majorName,
       description,
-      departmentId,
+      departmentId: departmentId,
     };
 
-    fetch('http://localhost:8080/majors', {
+    fetch('http://localhost:8081/majors', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -71,7 +71,6 @@ const AddMajor = ({ onMajorAdded }) => {
               type="text"
               value={majorName}
               onChange={(e) => setMajorName(e.target.value)}
-              required
               placeholder="Major Name"
             />
           </div>
@@ -80,7 +79,6 @@ const AddMajor = ({ onMajorAdded }) => {
               className="inputField"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              required
               placeholder="Description"
             />
           </div>

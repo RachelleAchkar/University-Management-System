@@ -2,31 +2,40 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './Forms.css';
 
-const AddDepartment = ({ onDepartmentAdded }) => {
+const AddDepartment = () => {
   const [departmentName, setDepartmentName] = useState('');
+  const [error, setError] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
 
-  const facultyId = location.state?.facultyId;
+  const facultyId = location.state?.facultyId; // Get the faculty ID from the previous page
 
   useEffect(() => {
-    console.log("Received facultyId in AddDepartment:", facultyId);
-  }, [facultyId]);
+    if (!facultyId) {
+      alert('Faculty ID is missing! Redirecting...');
+      navigate('/faculties'); // Redirect if facultyId is missing
+    }
+  }, [facultyId, navigate]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
+  
+    if (!departmentName.trim()) {
+      alert('Department name is required.');
+      return;
+    }
+  
     if (!facultyId) {
       alert('Faculty ID is missing!');
       return;
     }
-
+  
     const departmentData = {
       departmentName,
       facultyID: facultyId, // Sending faculty reference
     };
-
-    fetch('http://localhost:8080/departments', {
+  
+    fetch('http://localhost:8081/departments', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -34,35 +43,25 @@ const AddDepartment = ({ onDepartmentAdded }) => {
       body: JSON.stringify(departmentData),
     })
       .then(async (response) => {
-        if (!response.ok) {
-          const data = await response.json();
-          // If validation errors exist, display them as alerts
-          if (data && data.message) {
-            alert(`Error: ${data.message}`);  // If there's a custom error message from backend
-          } else if (data) {
-            let errorMessage = 'Validation errors:\n';
-            Object.keys(data).forEach((key) => {
-              errorMessage += `${key}: ${data[key]}\n`;
-            });
-            alert(errorMessage);  // Show all errors as a single alert
-          } else {
-            alert('Failed to add department');
-          }
-          return;  // Stop further execution
-        }
-
         const data = await response.json();
+  
+        if (!response.ok) {
+          // Handle validation or server errors
+          alert(data.message || 'Failed to add department.');
+          return;
+        }
+  
+        // Success case
         alert('Department added successfully!');
-        console.log('Added department:', data); 
         setDepartmentName(''); // Clear the input field
-        if (onDepartmentAdded) onDepartmentAdded(data); // Notify parent of the addition
-        navigate('/departments', { state: { facultyId } });
+        navigate('/departments', { state: { facultyId } }); // Redirect to the department list
       })
       .catch((error) => {
         console.error('Error:', error);
-        alert('Failed to add department');
+        alert('Failed to add department. Please try again later.');
       });
   };
+  
 
   return (
     <div className="formContainer">
@@ -75,10 +74,10 @@ const AddDepartment = ({ onDepartmentAdded }) => {
               type="text"
               value={departmentName}
               onChange={(e) => setDepartmentName(e.target.value)}
-              required
               placeholder="Department Name"
             />
           </div>
+          {error && <p className="errorText">{error}</p>}
           <button type="submit" className="formButton">
             Add Department
           </button>

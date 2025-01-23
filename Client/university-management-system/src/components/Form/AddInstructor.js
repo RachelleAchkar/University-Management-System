@@ -31,7 +31,7 @@ const AddInstructor = () => {
     e.preventDefault();
     console.log('Form Data Submitted:', formData);
   
-    fetch('http://localhost:8080/addInstructor', {
+    fetch('http://localhost:8081/addInstructor', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

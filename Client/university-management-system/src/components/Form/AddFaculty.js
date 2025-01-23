@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import './Forms.css';
 
 const AddFaculty = () => {
-  const [facultyName, setFacultyName] = useState('');
+  const [facultyname, setFacultyName] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
@@ -17,11 +18,11 @@ const AddFaculty = () => {
     }
   
     const facultyData = {
-      facultyName,
+      facultyname,
       adminId, 
     };
   
-    fetch('http://localhost:8080/faculties', {
+    fetch('http://localhost:8081/faculties', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -32,9 +33,9 @@ const AddFaculty = () => {
         if (!response.ok) {
           return response.json().then((data) => {
             // Check if it's a validation error
-            if (data.facultyName) {
+            if (data.facultyname) {
               // Display validation error alert
-              alert(data.facultyName);  // This will show the error in an alert
+              alert(data.facultyname);  // This will show the error in an alert
             } else if (data.message) {
               alert(data.message);  // If any other message from backend
             } else {
@@ -68,9 +69,8 @@ const AddFaculty = () => {
               type="text"
               className="inputField"
               placeholder="Faculty Name"
-              value={facultyName}
+              value={facultyname}
               onChange={(e) => setFacultyName(e.target.value)}
-              required
             />
           </div>
           <button type="submit" className="formButton">

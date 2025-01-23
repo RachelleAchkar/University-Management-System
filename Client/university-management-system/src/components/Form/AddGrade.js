@@ -24,7 +24,7 @@ const AddGrade = ({ onGradeSubmit, onClose }) => {
           setCourses(JSON.parse(storedCourses)); // Use stored data if available
         } else {
           // Fetch from the backend if not in localStorage
-          const response = await fetch(`http://localhost:8080/enrollment/${studentId}`);
+          const response = await fetch(`http://localhost:8081/enrollment/${studentId}`);
           if (response.ok) {
             const data = await response.json();
             setCourses(data); 
@@ -77,7 +77,7 @@ const AddGrade = ({ onGradeSubmit, onClose }) => {
         },
       ];
 
-      const response = await fetch(`http://localhost:8080/enrollment/updateEnrollmentGrade/${selectedCourse.courseID}`, {
+      const response = await fetch(`http://localhost:8081/enrollment/updateEnrollmentGrade/${selectedCourse.courseID}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(gradeUpdatePayload),

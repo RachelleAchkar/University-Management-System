@@ -25,7 +25,7 @@ const Transcript = () => {
     const fetchEnrollments = async () => {
       try {
         // fetch enrollments for a specific student
-        const response = await fetch(`http://localhost:8080/enrollment/transcript/${studentId}/${gradeLevel}`);
+        const response = await fetch(`http://localhost:8081/enrollment/transcript/${studentId}/${gradeLevel}`);
         if (response.ok) {
           const data = await response.json();
           console.log('Fetched enrollments:', data); 

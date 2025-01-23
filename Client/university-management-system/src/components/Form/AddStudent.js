@@ -48,7 +48,7 @@ const AddStudent = () => {
     const studentData = { ...formData, majorId, fileNumber }; // Include majorId in the payload
 
     try {
-      const response = await fetch('http://localhost:8080/addStudent', {
+      const response = await fetch('http://localhost:8081/addStudent', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -12,7 +12,7 @@ const AllCourses = () => {
  useEffect (() => {
     const fetchCourses = async () => {
         try{
-            const response = await fetch(`http://localhost:8080/courses/${majorId}`);
+            const response = await fetch(`http://localhost:8081/courses/${majorId}`);
             if(response.ok){
                 const data = await response.json();
                 setCourses(data);

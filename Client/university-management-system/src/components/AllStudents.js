@@ -38,7 +38,7 @@ const fetchStudents = (search = searchQuery) => {
   setLoading(true);
   setStudents([]); // Clear previous students to avoid duplicates
 
-  const url = new URL(`http://localhost:8080/addStudent/major/${majorId}`);
+  const url = new URL(`http://localhost:8081/addStudent/major/${majorId}`);
   
   if (search && search.trim() !== "") {
       url.searchParams.append("search", search);
@@ -66,7 +66,7 @@ const fetchStudents = (search = searchQuery) => {
 
   useEffect(() => {
 
-    fetch('http://localhost:8080/addStudent/maxFileNumber')
+    fetch('http://localhost:8081/addStudent/maxFileNumber')
       .then((response) => response.json())
       .then((data) => {
         if (data !== null && typeof data === 'number') {
@@ -83,7 +83,7 @@ const fetchStudents = (search = searchQuery) => {
      // Function to delete a student
      const handleDeleteStudent = (studentId) => {
       if (window.confirm("Are you sure you want to delete this student?")) {
-        fetch(`http://localhost:8080/addStudent/delete/${studentId}`, {
+        fetch(`http://localhost:8081/addStudent/delete/${studentId}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -122,7 +122,7 @@ const fetchStudents = (search = searchQuery) => {
   const handleSubmitFileNumber = async () => {
     try {
 
-      const response = await fetch(`http://localhost:8080/addStudent/info/${fileNumber}`);
+      const response = await fetch(`http://localhost:8081/addStudent/info/${fileNumber}`);
 
       if (response.ok) {
         const studentData = await response.json();

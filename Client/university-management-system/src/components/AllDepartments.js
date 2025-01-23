@@ -5,8 +5,6 @@ import './AllFaculties.css';
 const AllDepartments = () => {
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortOrder, setSortOrder] = useState('A-Z'); // Default sort order
   const location = useLocation();
   const navigate = useNavigate();
   const facultyId = location.state?.facultyId;
@@ -19,33 +17,27 @@ const AllDepartments = () => {
         return;
       }
 
-      const orderByColumn = 'departmentName';
-      const orderByDirection = sortOrder === "A-Z" ? "ASC" : "DESC"; 
-
-      const apiUrl = `http://localhost:8080/departments/faculty/${facultyId}?search=${searchQuery}&orderByDirection=${orderByDirection}&orderByColumn=${orderByColumn}`;
-      
-      console.log("Fetching from API:", apiUrl);
-
       try {
-        const response = await fetch(apiUrl);
+        const response = await fetch(`http://localhost:8081/departments/faculty/${facultyId}`);
         const data = await response.json();
 
-        console.log("API Response:", data); 
+        console.log('Fetched departments:', data); // Log for debugging
         if (response.ok) {
           setDepartments(data);
         } else {
-          setDepartments([]); // Handle empty or error response
+          console.error('Error fetching departments:', data);
+          setDepartments([]);
         }
       } catch (error) {
         console.error('Error fetching departments:', error);
         setDepartments([]);
       } finally {
-        setLoading(false); // Remove loading state after the API call
+        setLoading(false);
       }
     };
 
     fetchDepartments();
-  }, [facultyId, searchQuery, sortOrder]); // Trigger fetch when facultyId, searchQuery, or sortOrder changes
+  }, [facultyId]);
 
   if (loading) {
     return <p>Loading...</p>;
@@ -60,37 +52,21 @@ const AllDepartments = () => {
   };
 
   const handleAddDepartment = () => {
-    navigate(`/addDepartment`, { state: { facultyId } });
+    navigate('/addDepartment', { state: { facultyId } });
   };
 
   return (
     <div className="faculties-container">
       <h1>Departments in Faculty</h1>
-      <div className="controls">
-        <input
-          type="text"
-          placeholder="Search by name"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)} className="search-bar"
-        />
-        <select
-          value={sortOrder}
-          onChange={(e) => setSortOrder(e.target.value)}
-          className="sort-dropdown"
-        >
-          <option value="A-Z">Sort by Name (A-Z)</option>
-          <option value="Z-A">Sort by Name (Z-A)</option>
-        </select>
-      </div>
       {departments.length === 0 ? (
         <p>No departments found.</p>
       ) : (
         <div className="faculties-list">
           {departments.map((department) => (
             <div
-              key={department.departmentID}
+              key={department._id}
               className="faculty-box"
-              onClick={() => handleDepartmentClick(department.departmentID)}
+              onClick={() => handleDepartmentClick(department._id)}
             >
               {department.departmentName}
             </div>

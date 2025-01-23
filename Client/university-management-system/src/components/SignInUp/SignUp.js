@@ -19,7 +19,7 @@ const SignUp = () => {
     console.log('Sending admin data:', admin);  // Log the data being sent
   
     try {
-      const response = await fetch('http://localhost:8080/admin/signup', {
+      const response = await fetch('http://localhost:8081/admin/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

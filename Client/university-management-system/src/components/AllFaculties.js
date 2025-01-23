@@ -3,49 +3,41 @@ import { useNavigate } from 'react-router-dom';
 import './AllFaculties.css';
 
 const AllFaculties = () => {
-  const [faculties, setFaculties] = useState([]);
+  const [faculties, setFaculties] = useState([]); // Initialize as an empty array
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortOrder, setSortOrder] = useState('A-Z'); // Default sort order
   const adminId = localStorage.getItem('adminId');
   const navigate = useNavigate();
-  
+
   useEffect(() => {
     const fetchFaculties = async () => {
-      const orderByColumn = "facultyName"; 
-      const orderByDirection = sortOrder === "A-Z" ? "ASC" : "DESC"; 
-  
-      const apiUrl = `http://localhost:8080/faculties/admin/${adminId}?orderByColumn=${orderByColumn}&orderByDirection=${orderByDirection}&search=${searchQuery}`;
-      
-      console.log("Fetching from API:", apiUrl);
-  
       try {
-        const response = await fetch(apiUrl);
+        const response = await fetch(`http://localhost:8081/faculties/${adminId}`);
         const data = await response.json();
-  
-        console.log("API Response:", data);
-  
-        if (response.ok) {
-          setFaculties(data); // Store fetched faculties in state
+
+        console.log("Fetched faculties:", data); // Log the response for debugging
+
+        // Check if the response contains the faculties property and set it
+        if (data && Array.isArray(data.faculties)) {
+          setFaculties(data.faculties);
         } else {
-          setFaculties([]); // Clear faculty list on error
+          console.error("Unexpected API response format:", data);
+          setFaculties([]); // Fallback to an empty array
         }
       } catch (error) {
         console.error('Error fetching faculties:', error);
+        setFaculties([]); // Fallback to an empty array on error
       } finally {
         setLoading(false);
       }
     };
-  
-    fetchFaculties();
-  }, [adminId, sortOrder, searchQuery]);
-  
 
+    fetchFaculties();
+  }, [adminId]);
 
   if (loading) {
     return <p>Loading...</p>;
   }
-  
+
   const handleFacultyClick = (facultyId) => {
     navigate('/departments', { state: { facultyId } });
   };
@@ -57,34 +49,17 @@ const AllFaculties = () => {
   return (
     <div className="faculties-container">
       <h1>All Faculties</h1>
-      <div className="controls">
-        <input
-          type="text"
-          placeholder="Search by name"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="search-bar"
-        />
-        <select
-          value={sortOrder}
-          onChange={(e) => setSortOrder(e.target.value)}
-          className="sort-dropdown"
-        >
-          <option value="A-Z">Sort by Name (A-Z)</option>
-          <option value="Z-A">Sort by Name (Z-A)</option>
-        </select>
-      </div>
       {faculties.length === 0 ? (
         <p>No faculties found.</p>
       ) : (
         <div className="faculties-list">
           {faculties.map((faculty) => (
             <div
-              key={faculty.facultyId}
+              key={faculty._id}
               className="faculty-box"
-              onClick={() => handleFacultyClick(faculty.facultyId)}
+              onClick={() => handleFacultyClick(faculty._id)}
             >
-              {faculty.facultyName}
+              {faculty.facultyname}
             </div>
           ))}
         </div>

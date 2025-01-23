@@ -15,7 +15,7 @@ const AllInstructors = () => {
   useEffect(() => {
     const fetchInstructors = async () => {
       try {
-        const url = new URL(`http://localhost:8080/instructors/${majorId}`);
+        const url = new URL(`http://localhost:8081/instructors/${majorId}`);
         if (searchTerm && searchTerm.trim() !== "") {
           url.searchParams.append("search", searchTerm);  // Append search term to the URL
         }
