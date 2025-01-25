@@ -1,92 +1,69 @@
-import React, { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import "./AddStudent.css";
-
+import React, { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import './AddStudent.css';
 const AddInstructor = () => {
   const location = useLocation();
-  const majorId = location.state?.majorId;
   const navigate = useNavigate();
+  const majorId = location.state?.majorId || ''; // Major ID passed via navigation state
   const [formData, setFormData] = useState({
-    firstname: "",
-    lastname: "",
-    dob: "",
-    email: "",
-    phonenumber: "",
-    address: "",
-    hiredate: "", // Use hiredate here
-    salary: "",
-    majorId: majorId || "",
+    firstname: '',
+    lastname: '',
+    dob: '',
+    email: '',
+    phonenumber: '',
+    address: '',
+    hiredate: '',
+    salary: '',
+    image: null, // For image file upload
+    cv: null, // For CV file upload
+    majorid: majorId,
   });
-  
-  const [image, setImage] = useState(null);
-  const [cv, setCv] = useState(null);
-
+  const [errors, setErrors] = useState({});
+  // Handle form input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
-
+  // Handle file input changes
   const handleFileChange = (e) => {
     const { name, files } = e.target;
-    if (name === "image") {
-      setImage(files[0]);
-    } else if (name === "cv") {
-      setCv(files[0]);
-    }
+    setFormData((prev) => ({ ...prev, [name]: files[0] }));
   };
-
-  const handleSubmit = (e) => {
+  // Handle form submission
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form Data Submitted:", formData);
-      // Ensure hireDate is a valid date string
-  if (!formData.hiredate || isNaN(new Date(formData.hiredate).getTime())) {
-    alert("Invalid hire date.");
-    return;
-  }
-
-  
-    // Create FormData object for multipart/form-data
-    const data = new FormData();
+    setErrors({}); // Clear previous errors
+    // Validate fields before submission
+    if (!formData.majorid) {
+      alert('Major ID is required. Please navigate from a valid major context.');
+      return;
+    }
+    const formDataToSend = new FormData();
     Object.keys(formData).forEach((key) => {
-      // Update formData key names to match server-side expected field names
-      const serverKey = key.toLowerCase(); // Convert keys to lowercase for matching
-      data.append(serverKey, formData[key]);
+      formDataToSend.append(key, formData[key]);
     });
-    if (image) {
-      data.append("image", image);
-    }
-    if (cv) {
-      data.append("cv", cv);
-    }
-  
-    fetch("http://localhost:8081/instructor/add", {
-      method: "POST",
-      body: data,
-    })
-      .then(async (response) => {
-        if (response.ok) {
-          alert("Instructor added successfully!");
-          navigate("/allInstructors", { state: { majorId } });
-        } else {
-          const errorMessage = await response.text();
-          alert(`Validation Error:\n${errorMessage}`);
-        }
-      })
-      .catch((error) => {
-        alert(`Error: ${error.message}`);
+    try {
+      const response = await fetch('http://localhost:8081/instructor/add', {
+        method: 'POST',
+        body: formDataToSend,
       });
+      if (response.ok) {
+        alert('Instructor added successfully!');
+        navigate('/allInstructors', { state: { majorId } });
+      } else {
+        const error = await response.json();
+        setErrors(error);
+        alert(`Error: ${error.message}`);
+      }
+    } catch (error) {
+      alert(`Error: ${error.message}`);
+    }
   };
-  
-  
   return (
     <div className="formContainer">
       <div className="formWrapper">
         <h2 className="formTitle">Add Instructor</h2>
-        <form onSubmit={handleSubmit}>
-          {/* Text Inputs */}
+        <form onSubmit={handleSubmit} encType="multipart/form-data">
           <div className="inputContainer1">
             <label htmlFor="firstname">First Name</label>
             <input
@@ -136,7 +113,7 @@ const AddInstructor = () => {
             />
           </div>
           <div className="inputContainer1">
-            <label htmlFor="phoneNumber">Phone Number</label>
+            <label htmlFor="phonenumber">Phone Number</label>
             <input
               type="tel"
               id="phonenumber"
@@ -174,7 +151,8 @@ const AddInstructor = () => {
           <div className="inputContainer1">
             <label htmlFor="salary">Salary</label>
             <input
-              type="text"
+              type="number"
+              step="0.01"
               id="salary"
               name="salary"
               value={formData.salary}
@@ -183,10 +161,8 @@ const AddInstructor = () => {
               required
             />
           </div>
-
-          {/* File Inputs */}
           <div className="inputContainer1">
-            <label htmlFor="image">Image</label>
+            <label htmlFor="image">Upload Image</label>
             <input
               type="file"
               id="image"
@@ -198,7 +174,7 @@ const AddInstructor = () => {
             />
           </div>
           <div className="inputContainer1">
-            <label htmlFor="cv">CV (PDF)</label>
+            <label htmlFor="cv">Upload CV (PDF)</label>
             <input
               type="file"
               id="cv"
@@ -209,8 +185,6 @@ const AddInstructor = () => {
               required
             />
           </div>
-
-          {/* Submit Button */}
           <button type="submit" className="formButton">
             Add Instructor
           </button>
@@ -219,5 +193,4 @@ const AddInstructor = () => {
     </div>
   );
 };
-
 export default AddInstructor;

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import './AllFaculties.css'; 
+import './AllFaculties.css';
+
 
 const AllInstructors = () => {
   const [instructors, setInstructors] = useState([]);
@@ -8,18 +9,16 @@ const AllInstructors = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const majorId = location.state?.majorId;
-  const [searchQuery, setSearchQuery] = useState('');  
-  const [searchTerm, setSearchTerm] = useState("");  
 
- 
+  const formatDate = (date) => {
+    const d = new Date(date);
+    return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+  };
+
   useEffect(() => {
     const fetchInstructors = async () => {
       try {
-        const url = new URL(`http://localhost:8081/instructors/${majorId}`);
-        if (searchTerm && searchTerm.trim() !== "") {
-          url.searchParams.append("search", searchTerm);  // Append search term to the URL
-        }
-        const response = await fetch(url);
+        const response = await fetch(`http://localhost:8081/instructors/${majorId}`);
         if (response.ok) {
           const data = await response.json();
           setInstructors(data);
@@ -33,22 +32,7 @@ const AllInstructors = () => {
       }
     };
     fetchInstructors();
-  }, [majorId, searchTerm]); 
-
-  // Handle search query change
-  const handleSearchChange = () => {
-    setSearchTerm(searchQuery);  
-  };
-
-  // Handle clearing the search input
-  const handleClearSearch = () => {
-    setSearchQuery(""); 
-    setSearchTerm("");   
-  };
-
- if (loading) {
-    return <p>Loading...</p>;
-  }
+  }, [majorId]);
 
   const handleAddInstructorClick = () => {
     navigate('/addInstructor', { state: { majorId } });
@@ -57,8 +41,6 @@ const AllInstructors = () => {
   const handleBackToMajorDetails = () => {
     navigate('/majordetails', { state: { majorId } });
   };
-
-  
 
   if (!majorId) {
     return <p>Major not found. Please go back and select a major.</p>;
@@ -80,51 +62,67 @@ const AllInstructors = () => {
       </button>
 
       <h1>Instructors</h1>
-      <div className="search-container">
-        <input
-          type="text"
-          placeholder="Search by name"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="search-input"
-        />
-        <button className="search-button" onClick={handleSearchChange}>🔍 Search</button>
-        <button className="clear-button" onClick={handleClearSearch}>❌ Clear</button>
-      </div>
+
       {instructors.length === 0 ? (
         <p>No instructors found for this major.</p>
       ) : (
         <div className="faculties-list">
           {instructors.map((instructor) => (
             <div
-              key={instructor.instructorId} 
+              key={instructor._id} // Use the instructor's _id from MongoDB
               className="faculty-box"
             >
-              <h3>{instructor.firstName} {instructor.lastName}</h3>
+              {/* Display Image */}
+              {instructor.image && (
+                <div className="instructor-image">
+                  <img
+                    src={`data:image/${instructor.imageFormat};base64,${instructor.image.toString('base64')}`}
+                    alt={`${instructor.firstname} ${instructor.lastname}`}
+                    style={{ maxWidth: '100px', maxHeight: '100px' }}
+                  />
+                </div>
+              )}
+              <h3>{instructor.firstname} {instructor.lastname}</h3>
               <div className="course-details">
-      <div className="course-detail">
-        <span className="label">Date of Birth:</span> <span>{instructor.dob}</span>
-      </div>
-      <div className="course-detail">
-        <span className="label">Email:</span> <span>{instructor.email}</span>
-      </div>
-      <div className="course-detail">
-        <span className="label">Phone Number:</span> <span>{instructor.phoneNumber}</span>
-      </div>
-      <div className="course-detail">
-        <span className="label">Address:</span> <span>{instructor.address}</span>
-      </div>
-      <div className="course-detail">
-        <span className="label">Hire Date:</span> <span>{instructor.hireDate}</span>
-      </div>
-      <div className="course-detail">
-        <span className="label">Salary:</span><span>{instructor.salary} $</span>
-      </div>
-    </div>
+                <div className="course-detail">
+                  <span className="label">Date of Birth:</span> <span>{formatDate(instructor.dob)}</span>
+                </div>
+                <div className="course-detail">
+                  <span className="label">Email:</span> <span>{instructor.email}</span>
+                </div>
+                <div className="course-detail">
+                  <span className="label">Phone Number:</span> <span>{instructor.phonenumber}</span>
+                </div>
+                <div className="course-detail">
+                  <span className="label">Address:</span> <span>{instructor.address}</span>
+                </div>
+                <div className="course-detail">
+                  <span className="label">Hire Date:</span> <span>{formatDate(instructor.hiredate)}</span>
+                </div>
+                <div className="course-detail">
+                  <span className="label">Salary:</span> <span>{instructor.salary} $</span>
+                </div>
+              
+
+                
+                {/* Display CV */}
+                {instructor.cv && (
+                  <div className="course-detail">
+                    <span className="label">CV:</span>
+                    <a
+                      href={`data:application/pdf;base64,${instructor.cv.toString('base64')}`}
+                      download={`${instructor.firstname}_${instructor.lastname}_CV.pdf`}
+                    >
+                      Download CV
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>
       )}
+
       {/* Add Instructor Button */}
       <button className="add-faculty-button" onClick={handleAddInstructorClick}>
         Add Instructor
