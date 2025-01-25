@@ -1,8 +1,39 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { MongoClient, ObjectId } = require('mongodb'); // Import ObjectId
-
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const app = express();
+
+
+// Set storage configuration for multer
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads'); // Specify the 'uploads' folder to store files
+  },
+  filename: (req, file, cb) => {
+    // Generate a unique filename using timestamp
+    cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
+
+// File filter to allow only PDFs, JPG, and PNG files
+const fileFilter = (req, file, cb) => {
+  const fileTypes = /pdf|jpeg|jpg|png/;
+  const mimeType = fileTypes.test(file.mimetype);
+
+  if (mimeType) {
+    cb(null, true);  // Accept the file
+  } else {
+    cb(new Error('Only PDF, JPG, PNG files are allowed!'), false);  // Reject the file
+  }
+};
+
+// Initialize multer with storage and file filter configurations
+const upload = multer({ storage: storage, fileFilter: fileFilter });
+
+
 app.use(express.json());
 const cors = require('cors');
 app.use(
@@ -281,6 +312,108 @@ app.get('/majors/:departmentId', async (req, res) => {
     res.status(500).json({ message: 'Server error.' });
   }
 });
+
+
+// Route to Add New Instructor
+app.post("/instructor/add", upload.fields([{ name: 'image' }, { name: 'cv' }]), async (req, res) => {
+  const {
+    firstname,
+    lastname,
+    email,
+    phonenumber,
+    hiredate,
+    dob,
+    salary,
+    address,
+    majorid,
+  } = req.body;
+
+  // Get the uploaded files
+  const imagePath = req.files['image'] ? req.files['image'][0].path : undefined;
+  const cvPath = req.files['cv'] ? req.files['cv'][0].path : undefined;
+
+  // Validate required fields
+  if (
+    !firstname ||
+    !lastname ||
+    !email ||
+    !phonenumber ||
+    !hiredate ||
+    !dob ||
+    !salary ||
+    !majorid ||
+    !imagePath ||
+    !cvPath
+  ) {
+    return res.status(400).json({ message: "All fields are required." });
+  }
+
+  try {
+    // Read the image and CV files as binary data
+    const imageBinary = fs.readFileSync(imagePath); // Read image file
+    const cvBinary = fs.readFileSync(cvPath); // Read CV file
+
+    // Ensure the majorId exists in the major collection
+    const major = await db.collection("majors").findOne({ _id: new ObjectId(majorid) });
+
+    if (!major) {
+      return res.status(400).json({ message: "Invalid majorId. Major not found." });
+    }
+
+    // Create the new instructor object
+    const newInstructor = {
+      firstname,
+      lastname,
+      email,
+      phonenumber,
+      address,
+      hiredate: new Date(hiredate),  // Ensure hiredate is a Date object
+      dob: new Date(dob),            // Ensure dob is a Date object
+      salary: parseFloat(salary),    // Ensure salary is a number
+      image: imageBinary,            // Binary data for image
+      cv: cvBinary,                  // Binary data for CV
+      majorid: new ObjectId(majorid), // Ensure majorid is a valid ObjectId
+    };
+
+    console.log(newInstructor);  // Check if the structure matches the schema
+
+    // Insert the new instructor into the database
+    const result = await db.collection("instructor").insertOne(newInstructor);
+
+    res.status(201).json({
+      message: "Instructor added successfully.",
+      instructorId: result.insertedId.toString(),
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error." });
+  }
+});
+
+// Get all instructors for a specific major
+app.get('/instructors/:majorId', async (req, res) => {
+  const { majorId } = req.params;
+
+  try {
+    // Validate majorId
+    if (!ObjectId.isValid(majorId)) {
+      return res.status(400).json({ message: 'Invalid majorId.' });
+    }
+
+    // Fetch all instructors related to the majorId
+    const instructors = await db.collection('instructor').find({ majorid: new ObjectId(majorId) }).toArray();
+
+    if (instructors.length === 0) {
+      return res.status(404).json({ message: 'No instructors found for this major.' });
+    }
+
+    res.status(200).json(instructors);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
 
   // Start the server
   app.listen(PORT, () => {
