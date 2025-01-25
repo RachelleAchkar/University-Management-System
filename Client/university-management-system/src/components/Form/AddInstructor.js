@@ -1,23 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import './AddStudent.css';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import "./AddStudent.css";
+
 const AddInstructor = () => {
   const location = useLocation();
   const majorId = location.state?.majorId;
-  console.log("Received majorId in AddInstructor:", majorId);
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    dob: '',
-    email: '',
-    phoneNumber: '',
-    address: '',
-    hireDate: '',
-    salary: '',
-    majorId: majorId || '',
+    firstname: "",
+    lastname: "",
+    dob: "",
+    email: "",
+    phonenumber: "",
+    address: "",
+    hiredate: "", // Use hiredate here
+    salary: "",
+    majorId: majorId || "",
   });
+  
+  const [image, setImage] = useState(null);
+  const [cv, setCv] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -27,21 +29,47 @@ const AddInstructor = () => {
     }));
   };
 
+  const handleFileChange = (e) => {
+    const { name, files } = e.target;
+    if (name === "image") {
+      setImage(files[0]);
+    } else if (name === "cv") {
+      setCv(files[0]);
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Form Data Submitted:', formData);
+    console.log("Form Data Submitted:", formData);
+      // Ensure hireDate is a valid date string
+  if (!formData.hiredate || isNaN(new Date(formData.hiredate).getTime())) {
+    alert("Invalid hire date.");
+    return;
+  }
+
   
-    fetch('http://localhost:8081/addInstructor', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(formData),
+    // Create FormData object for multipart/form-data
+    const data = new FormData();
+    Object.keys(formData).forEach((key) => {
+      // Update formData key names to match server-side expected field names
+      const serverKey = key.toLowerCase(); // Convert keys to lowercase for matching
+      data.append(serverKey, formData[key]);
+    });
+    if (image) {
+      data.append("image", image);
+    }
+    if (cv) {
+      data.append("cv", cv);
+    }
+  
+    fetch("http://localhost:8081/instructor/add", {
+      method: "POST",
+      body: data,
     })
       .then(async (response) => {
         if (response.ok) {
-          alert('Instructor added successfully!');
-          navigate('/allInstructors', { state: { majorId } });
+          alert("Instructor added successfully!");
+          navigate("/allInstructors", { state: { majorId } });
         } else {
           const errorMessage = await response.text();
           alert(`Validation Error:\n${errorMessage}`);
@@ -52,30 +80,32 @@ const AddInstructor = () => {
       });
   };
   
+  
   return (
     <div className="formContainer">
       <div className="formWrapper">
         <h2 className="formTitle">Add Instructor</h2>
         <form onSubmit={handleSubmit}>
+          {/* Text Inputs */}
           <div className="inputContainer1">
-            <label htmlFor="firstName">First Name</label>
+            <label htmlFor="firstname">First Name</label>
             <input
               type="text"
-              id="firstName"
-              name="firstName"
-              value={formData.firstName}
+              id="firstname"
+              name="firstname"
+              value={formData.firstname}
               onChange={handleChange}
               className="inputField"
               required
             />
           </div>
           <div className="inputContainer1">
-            <label htmlFor="lastName">Last Name</label>
+            <label htmlFor="lastname">Last Name</label>
             <input
               type="text"
-              id="lastName"
-              name="lastName"
-              value={formData.lastName}
+              id="lastname"
+              name="lastname"
+              value={formData.lastname}
               onChange={handleChange}
               className="inputField"
               required
@@ -109,9 +139,9 @@ const AddInstructor = () => {
             <label htmlFor="phoneNumber">Phone Number</label>
             <input
               type="tel"
-              id="phoneNumber"
-              name="phoneNumber"
-              value={formData.phoneNumber}
+              id="phonenumber"
+              name="phonenumber"
+              value={formData.phonenumber}
               onChange={handleChange}
               className="inputField"
               required
@@ -130,12 +160,12 @@ const AddInstructor = () => {
             />
           </div>
           <div className="inputContainer1">
-            <label htmlFor="hireDate">Hire Date</label>
+            <label htmlFor="hiredate">Hire Date</label>
             <input
               type="date"
-              id="hireDate"
-              name="hireDate"
-              value={formData.hireDate}
+              id="hiredate"
+              name="hiredate"
+              value={formData.hiredate}
               onChange={handleChange}
               className="inputField"
               required
@@ -153,7 +183,34 @@ const AddInstructor = () => {
               required
             />
           </div>
-        
+
+          {/* File Inputs */}
+          <div className="inputContainer1">
+            <label htmlFor="image">Image</label>
+            <input
+              type="file"
+              id="image"
+              name="image"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="inputField"
+              required
+            />
+          </div>
+          <div className="inputContainer1">
+            <label htmlFor="cv">CV (PDF)</label>
+            <input
+              type="file"
+              id="cv"
+              name="cv"
+              accept="application/pdf"
+              onChange={handleFileChange}
+              className="inputField"
+              required
+            />
+          </div>
+
+          {/* Submit Button */}
           <button type="submit" className="formButton">
             Add Instructor
           </button>

@@ -1,6 +1,9 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { MongoClient, ObjectId } = require('mongodb'); // Import ObjectId
+const multer = require('multer');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 app.use(express.json());
@@ -10,6 +13,20 @@ app.use(
     origin: 'http://localhost:3000',
   })
 );
+
+
+// Setup multer storage configuration
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');  // Save files to the 'uploads' folder
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname)); // Use unique file name
+  }
+});
+
+// Initialize multer upload handler
+const upload = multer({ storage });
 
 const PORT = 8081;
 const MONGO_URI = 'mongodb://127.0.0.1:27017/universitymanagementsystem';
@@ -279,6 +296,76 @@ app.get('/majors/:departmentId', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+app.post("/instructor/add", upload.fields([{ name: 'image' }, { name: 'cv' }]), async (req, res) => {
+  console.log('Received files:', req.files);
+  console.log('Received body:', req.body);
+
+  const {
+    firstname,
+    lastname,
+    email,
+    phonenumber,
+    hiredate,
+    dob,
+    salary,
+    address,
+    majorid,
+  } = req.body;
+
+  const imagePath = req.files?.image ? req.files.image[0].path : null;
+  const cvPath = req.files?.cv ? req.files.cv[0].path : null;
+
+  if (
+    !firstname ||
+    !lastname ||
+    !email ||
+    !phonenumber ||
+    !hiredate ||
+    !dob ||
+    !salary ||
+    !majorid ||
+    !imagePath ||
+    !cvPath
+  ) {
+    return res.status(400).json({ message: "All fields are required." });
+  }
+
+  try {
+    // Ensure the majorId exists in the major collection
+    const major = await db.collection("majors").findOne({ _id: new ObjectId(majorid) });
+
+    if (!major) {
+      return res.status(400).json({ message: "Invalid majorId. Major not found." });
+    }
+
+    // Create the new instructor object
+    const newInstructor = {
+      firstname,
+      lastname,
+      email,
+      phonenumber,
+      address,
+      hiredate: new Date(hiredate),
+      dob: new Date(dob),
+      salary: parseFloat(salary),
+      image: fs.readFileSync(imagePath), // Read image file
+      cv: fs.readFileSync(cvPath), // Read CV file
+      majorid: new ObjectId(majorid),
+    };
+
+    // Insert the new instructor into the collection
+    const result = await db.collection("instructor").insertOne(newInstructor);
+
+    res.status(201).json({
+      message: "Instructor added successfully.",
+      instructorId: result.insertedId.toString(),
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error." });
   }
 });
 
