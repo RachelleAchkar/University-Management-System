@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './AddStudent.css';
+
 const AddInstructor = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -19,20 +20,24 @@ const AddInstructor = () => {
     majorid: majorId,
   });
   const [errors, setErrors] = useState({});
+
   // Handle form input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
   // Handle file input changes
   const handleFileChange = (e) => {
     const { name, files } = e.target;
     setFormData((prev) => ({ ...prev, [name]: files[0] }));
   };
+
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrors({}); // Clear previous errors
+
     // Validate fields before submission
     if (!formData.majorid) {
       alert('Major ID is required. Please navigate from a valid major context.');
@@ -42,11 +47,13 @@ const AddInstructor = () => {
     Object.keys(formData).forEach((key) => {
       formDataToSend.append(key, formData[key]);
     });
+
     try {
       const response = await fetch('http://localhost:8081/instructor/add', {
         method: 'POST',
         body: formDataToSend,
       });
+
       if (response.ok) {
         alert('Instructor added successfully!');
         navigate('/allInstructors', { state: { majorId } });
@@ -59,6 +66,7 @@ const AddInstructor = () => {
       alert(`Error: ${error.message}`);
     }
   };
+
   return (
     <div className="formContainer">
       <div className="formWrapper">
@@ -193,4 +201,6 @@ const AddInstructor = () => {
     </div>
   );
 };
+
 export default AddInstructor;
+
