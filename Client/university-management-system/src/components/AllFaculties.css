@@ -181,3 +181,8 @@
 .back-button:hover {
   background-color: #655fa9;
 }
+
+.instructor-image {
+  object-fit: cover;
+  border-radius: 8px;
+}

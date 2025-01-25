@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import Modal from './Modal';  // Import the Modal component
 import './AllFaculties.css';
 
 const AllInstructors = () => {
   const [instructors, setInstructors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedInstructor, setSelectedInstructor] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
   const majorId = location.state?.majorId;
@@ -41,6 +44,16 @@ const AllInstructors = () => {
     navigate('/majordetails', { state: { majorId } });
   };
 
+  const openCVModal = (instructor) => {
+    setSelectedInstructor(instructor);
+    setIsModalOpen(true);
+  };
+
+  const closeCVModal = () => {
+    setIsModalOpen(false);
+    setSelectedInstructor(null);
+  };
+
   if (!majorId) {
     return <p>Major not found. Please go back and select a major.</p>;
   }
@@ -70,7 +83,18 @@ const AllInstructors = () => {
             <div
               key={instructor._id} // Use the instructor's _id from MongoDB
               className="faculty-box"
+              onClick={() => openCVModal(instructor)} // Open modal on click
             >
+              {/* Display Image */}
+              {instructor.image && (
+                <div className="instructor-image">
+                  <img
+                    src={`data:image/${instructor.imageFormat};base64,${instructor.image.toString('base64')}`}
+                    alt={`${instructor.firstname} ${instructor.lastname}`}
+                    style={{ maxWidth: '100px', maxHeight: '100px' }}
+                  />
+                </div>
+              )}
               <h3>{instructor.firstname} {instructor.lastname}</h3>
               <div className="course-details">
                 <div className="course-detail">
@@ -89,7 +113,7 @@ const AllInstructors = () => {
                   <span className="label">Hire Date:</span> <span>{formatDate(instructor.hiredate)}</span>
                 </div>
                 <div className="course-detail">
-                  <span className="label">Salary:</span><span>{instructor.salary} $</span>
+                  <span className="label">Salary:</span> <span>{instructor.salary} $</span>
                 </div>
               </div>
             </div>
@@ -101,6 +125,17 @@ const AllInstructors = () => {
       <button className="add-faculty-button" onClick={handleAddInstructorClick}>
         Add Instructor
       </button>
+
+      {/* Modal for CV */}
+      {selectedInstructor && (
+        <Modal
+          isOpen={isModalOpen}
+          onClose={closeCVModal}
+          instructorName={`${selectedInstructor.firstname} ${selectedInstructor.lastname}`}
+          cvData={selectedInstructor.cv}
+          downloadLink={`data:application/pdf;base64,${selectedInstructor.cv.toString('base64')}`}
+        />
+      )}
     </div>
   );
 };
