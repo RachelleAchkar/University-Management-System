@@ -43,7 +43,6 @@ const AddInstructor = () => {
       alert('Major ID is required. Please navigate from a valid major context.');
       return;
     }
-
     const formDataToSend = new FormData();
     Object.keys(formData).forEach((key) => {
       formDataToSend.append(key, formData[key]);
@@ -204,3 +203,4 @@ const AddInstructor = () => {
 };
 
 export default AddInstructor;
+

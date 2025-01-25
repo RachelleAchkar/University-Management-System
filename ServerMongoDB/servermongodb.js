@@ -369,7 +369,7 @@ app.post("/instructor/add", upload.fields([{ name: 'image' }, { name: 'cv' }]), 
       address,
       hiredate: new Date(hiredate),  // Ensure hiredate is a Date object
       dob: new Date(dob),            // Ensure dob is a Date object
-      salary: parseFloat(salary),    // Ensure salary is a number
+      salary: parseFloat(salary), // Ensure salary is a number
       image: imageBinary,            // Binary data for image
       cv: cvBinary,                  // Binary data for CV
       majorid: new ObjectId(majorid), // Ensure majorid is a valid ObjectId

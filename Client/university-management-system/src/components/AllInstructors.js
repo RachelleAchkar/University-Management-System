@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Modal from './Modal';  // Import the Modal component
 import './AllFaculties.css';
 
+
 const AllInstructors = () => {
   const [instructors, setInstructors] = useState([]);
   const [loading, setLoading] = useState(true);
