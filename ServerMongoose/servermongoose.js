@@ -68,6 +68,16 @@ const InstructorSchema = new mongoose.Schema({
     cv: { type: Buffer, required: true },
     majorid: { type: mongoose.Schema.Types.ObjectId, ref: "Major", required: true },
   });
+  const CourseSchema = new mongoose.Schema({
+    courseName: { type: String, required: true },
+    credits: { type: Number, required: true, min: 1, max: 6 },
+    description: { type: String, required: true },
+    gradeLevel: { type: String, required: true, enum: ['First Year','Second Year','Third Year','M1','M2'] },
+    semesterNumber: { type: Number, required: true, validate:{validator: Number.isInteger, message:'{VALUE} is not an integer'}},
+    courseType: { type: String, required: false , default: "Mandatory" },
+    majorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Major', required: true },
+    instructorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Instructor', required: true },
+  });
   
 
 const Administrator = mongoose.model('Administrator', AdminSchema);
@@ -75,8 +85,9 @@ const Faculty = mongoose.model('Faculty', FacultySchema);
 const Department = mongoose.model('Department', DepartmentSchema);
 const Major = mongoose.model('Major', MajorSchema);
 const Instructor = mongoose.model("Instructor", InstructorSchema);
-// Routes
+const Course = mongoose.model('Course', CourseSchema);
 
+// Routes
 // Sign-Up Route for Administrators
 app.post('/admin/signup', async (req, res) => {
   const { firstname, lastname, email, password } = req.body;
@@ -370,6 +381,217 @@ app.post(
     }
 });
 
+
+// Add Course Route
+app.post('/courses/addCourse', async (req, res) => {
+  const { courseName, credits, description, gradeLevel, semesterNumber, courseType, majorId, instructorId } = req.body;
+
+  if (!courseName || !credits || !description || !gradeLevel || !majorId || !instructorId) {
+    return res.status(400).json({ message: 'All fields are required.' });
+  }
+
+  try {
+    const major = await Major.findById(majorId);
+    const instructor = await Instructor.findById(instructorId);
+
+    if (!major) {
+      return res.status(400).json({ message: 'Invalid majorId.' });
+    }
+
+    if (!instructor) {
+      return res.status(400).json({ message: 'Invalid instructorId.' });
+    }
+
+    const newCourse = new Course({
+      courseName,
+      credits,
+      description,
+      gradeLevel,
+      semesterNumber,
+      majorId,
+      instructorId,
+    });
+
+    const savedCourse = await newCourse.save();
+
+    res.status(201).json({
+      message: 'Course added successfully.',
+      courseId: savedCourse._id,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+//get courses by majorId
+app.get('/courses/major/:majorId', async (req, res) => {
+  const { majorId } = req.params;
+
+  try {
+    if (!mongoose.Types.ObjectId.isValid(majorId)) {
+      return res.status(400).json({ message: 'Invalid majorId.' });
+    }
+
+    const courses = await Course.find({ majorId })
+      .populate('majorId', 'name') // Populate major details
+      .populate('instructorId', 'name department') // Populate instructor details
+      .exec();
+
+    if (courses.length === 0) {
+      return res.status(404).json({ message: 'No courses found for this major.' });
+    }
+
+    res.status(200).json(courses);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+//Get Courses with Filtered Criteria (Grade Level > 1 or Credits Between 3 and 6)
+app.get('/courses/filtered/:majorId', async (req, res) => {
+  try {
+    const query = [
+      {
+        $match: {
+          $or: [
+            { gradeLevel: { $gt: "First Year" } },
+            { credits: { $gte: 3, $lte: 6 } }
+          ]
+        }
+      },
+      {
+        $lookup: {
+          from: 'majors',
+          localField: 'majorId',
+          foreignField: '_id',
+          as: 'major'
+        }
+      },
+      {
+        $lookup: {
+          from: 'instructors',
+          localField: 'instructorId',
+          foreignField: '_id',
+          as: 'instructor'
+        }
+      },
+    ];
+
+    const courses = await Course.aggregate(query);
+
+    if (courses.length === 0) {
+      return res.status(404).json({ message: 'No courses found matching the criteria.' });
+    }
+
+    res.status(200).json(courses);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+//Get Courses for "Second Year" and Semester Number > 2
+app.get('/courses/secondYearSemester/:majorId', async (req, res) => {
+  const { majorId } = req.params;
+
+  try {
+    const courses = await Course.find({
+      gradeLevel: 'Second Year',
+      semesterNumber: { $gt: 2 },
+      majorId,
+    }).populate('majorId', 'name').populate('instructorId', 'name department').exec();
+
+    if (courses.length === 0) {
+      return res.status(404).json({ message: 'No courses found matching the criteria.' });
+    }
+
+    res.status(200).json(courses);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// Get Optional Third-Year Courses
+app.get('/courses/optionalThirdYear/:majorId', async (req, res) => {
+  const { majorId } = req.params;
+
+  try {
+    const courses = await Course.find({
+      majorId,
+      courseType: 'Optional',
+      gradeLevel: 'Third Year',
+    }).populate('majorId', 'name').populate('instructorId', 'name department').exec();
+
+    if (courses.length === 0) {
+      return res.status(404).json({ message: 'No optional third-year courses found for this major.' });
+    }
+
+    res.status(200).json(courses);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+// Get Mandatory Courses Filtered by Credits or Semester
+app.get('/courses/mandatoryFiltered/:majorId', async (req, res) => {
+  const { majorId } = req.params;
+
+  try {
+    const courses = await Course.find({
+      majorId,
+      courseType: 'Mandatory',
+      $or: [
+        { credits: 3 },
+        { semesterNumber: 4 }
+      ]
+    }).populate('majorId', 'name').populate('instructorId', 'name department').exec();
+
+    if (courses.length === 0) {
+      return res.status(404).json({ message: 'No mandatory courses found matching the criteria.' });
+    }
+
+    res.status(200).json(courses);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+//instructor average salary
+app.get('/instructors/aggregate/salary', async (req, res) => {
+  try {
+    const aggregationResult = await Instructor.aggregate([
+      {
+        $lookup: {
+          from: "majors", // Join with the "majors" collection
+          localField: "majorid", // Field in the "instructors" collection
+          foreignField: "_id", // Field in the "majors" collection
+          as: "majorDetails", // Name for the joined data
+        },
+      },
+      {
+        $unwind: "$majorDetails", // Deconstruct array to get a document for each joined major
+      },
+      {
+        $group: {
+          _id: "$majorDetails.majorName", // Group by the name of the major
+          averageSalary: { $avg: "$salary" }, // Calculate average salary
+          instructorCount: { $sum: 1 }, // Count the number of instructors
+        },
+      },
+      {
+        $sort: { averageSalary: -1 }, // Sort by average salary in descending order
+      },
+    ]);
+
+    res.status(200).json(aggregationResult);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error." });
+  }
+});
 
 // Start the server
 app.listen(PORT, () => {
