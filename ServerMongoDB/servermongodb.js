@@ -414,8 +414,240 @@ app.get('/instructors/:majorId', async (req, res) => {
   }
 });
 
+// Route to Add New Course
+app.post('/courses/addCourse', async (req, res) => {
+  const { courseName, credits, description, gradeLevel, semesterNumber, majorId, instructorId, courseType } = req.body;
+
+  // Validate required fields
+  if (!courseName || !credits || !description || !gradeLevel || !semesterNumber || !majorId || !instructorId || !courseType) {
+    return res.status(400).json({ message: 'All fields are required.' });
+  }
+
+  // Validate courseType value
+  if (!['Mandatory', 'Optional'].includes(courseType)) {
+    return res.status(400).json({ message: 'Invalid courseType. Must be either "Mandatory" or "Optional".' });
+  }
+
+  try {
+    // Ensure the majorId exists in the majors collection
+    const major = await db.collection('majors').findOne({ _id: new ObjectId(majorId) });
+    if (!major) {
+      return res.status(400).json({ message: 'Invalid majorId. Major not found.' });
+    }
+
+    // Ensure the instructorId exists in the instructors collection
+    const instructor = await db.collection('instructor').findOne({ _id: new ObjectId(instructorId) });
+    if (!instructor) {
+      return res.status(400).json({ message: 'Invalid instructorId. Instructor not found.' });
+    }
+
+    // Create the new course object
+    const newCourse = {
+      courseName,
+      credits: parseInt(credits),
+      description,
+      gradeLevel,
+      semesterNumber: parseInt(semesterNumber),
+      majorId: new ObjectId(majorId),
+      instructorId: new ObjectId(instructorId),
+      courseType, // Added courseType field
+    };
+
+    // Insert the course into the courses collection
+    const result = await db.collection('courses').insertOne(newCourse);
+
+    res.status(201).json({
+      message: 'Course added successfully.',
+      courseId: result.insertedId.toString(),
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+
+
+// Get Courses by MajorId Route
+app.get('/courses/major/:majorId', async (req, res) => {
+  const { majorId } = req.params;
+
+  try {
+    // Validate majorId
+    if (!ObjectId.isValid(majorId)) {
+      return res.status(400).json({ message: 'Invalid majorId.' });
+    }
+
+    // Find courses related to the majorId
+    const courses = await db
+      .collection('courses')
+      .find({ majorId: new ObjectId(majorId) })
+      .toArray();
+
+    if (courses.length === 0) {
+      return res.status(404).json({ message: 'No courses found for this major.' });
+    }
+
+    res.status(200).json(courses);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// Route: Get courses for grade level > 1 or credits between 3 and 6
+app.get('/courses/filtered/:majorId', async (req, res) => {
+  const { instructorId } = req.query; // Get instructorId from query params
+
+  try {
+    const query = {
+      $or: [
+        { gradeLevel: { $gt: "First Year" } },
+        { credits: { $gte: 3, $lte: 6 } }
+      ]
+    };
+
+    const courses = await db.collection('courses').find(query).toArray();
+
+    if (courses.length === 0) {
+      return res.status(404).json({ message: 'No courses found matching the criteria.' });
+    }
+
+    res.status(200).json(courses);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+
+// Route: Get courses for grade level = "Second Year", semester number > 2
+app.get('/courses/secondYearSemester/:majorId', async (req, res) => {
+  const { instructorId } = req.query; // Get instructorId from query parameters
+
+  try {
+    // Build the query object
+    const query = {
+      gradeLevel: "Second Year", // Match grade level "Second Year"
+      semesterNumber: { $gt: 2 }, // Filter for semesterNumber greater than 2
+    };
+
+    const courses = await db.collection('courses').find(query).toArray();
+
+    if (courses.length === 0) {
+      return res.status(404).json({ message: 'No courses found matching the criteria.' });
+    }
+
+    res.status(200).json(courses);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// Route: Get courses for courseType = "Optional" and gradeLevel = "Third Year"
+app.get('/courses/optionalThirdYear/:majorId', async (req, res) => {
+  const { majorId } = req.params;
+
+  try {
+    // Validate majorId
+    if (!ObjectId.isValid(majorId)) {
+      return res.status(400).json({ message: 'Invalid majorId.' });
+    }
+
+    // Build the query object
+    const query = {
+      majorId: new ObjectId(majorId), // Match majorId
+      courseType: "Optional", // Match courseType "Optional"
+      gradeLevel: "Third Year" // Match gradeLevel "Third Year"
+    };
+
+    // Find courses based on the query
+    const courses = await db.collection('courses').find(query).toArray();
+
+    if (courses.length === 0) {
+      return res.status(404).json({ message: 'No optional third-year courses found for this major.' });
+    }
+
+    res.status(200).json(courses);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+// Route: Get courses where courseType = "Mandatory" and (credits = 3 OR semesterNumber = 4)
+app.get('/courses/mandatoryFiltered/:majorId', async (req, res) => {
+  const { majorId } = req.params;
+
+  try {
+    // Validate majorId
+    if (!ObjectId.isValid(majorId)) {
+      return res.status(400).json({ message: 'Invalid majorId.' });
+    }
+
+    // Build the query object
+    const query = {
+      majorId: new ObjectId(majorId), // Match majorId
+      courseType: "Mandatory", // Match courseType "Mandatory"
+      $or: [
+        { credits: 3 }, // Match courses with credits = 3
+        { semesterNumber: 4 } // Match courses with semesterNumber = 4
+      ]
+    };
+
+    // Find courses based on the query
+    const courses = await db.collection('courses').find(query).toArray();
+
+    if (courses.length === 0) {
+      return res.status(404).json({ message: 'No mandatory courses with the specified criteria found for this major.' });
+    }
+
+    res.status(200).json(courses);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// Route to calculate the average salary of instructors
+app.get('/instructors/aggregate/salary', async (req, res) => {
+  try {
+    // Use MongoDB aggregation pipeline to calculate the average salary
+    const result = await db.collection('instructor').aggregate([
+      {
+        $group: {
+          _id: null, // Grouping all documents (no specific group key)
+          averageSalary: { $avg: '$salary' }, // Calculate the average of the salary field
+        },
+      },
+    ]).toArray();
+
+    // Check if any data exists
+    if (result.length === 0) {
+      return res.status(404).json({ message: 'No instructors found to calculate the average salary.' });
+    }
+
+    res.status(200).json({
+      message: 'Average salary calculated successfully.',
+      averageSalary: result[0].averageSalary, // Extract the calculated average
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+
+
+
 
   // Start the server
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
   });
+
+
+
+
+
+  

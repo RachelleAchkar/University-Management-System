@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import Modal from './Modal';  // Import the Modal component
+import Modal from './Modal'; // Import the Modal component
 import './AllFaculties.css';
-
 
 const AllInstructors = () => {
   const [instructors, setInstructors] = useState([]);
@@ -36,6 +35,12 @@ const AllInstructors = () => {
     };
     fetchInstructors();
   }, [majorId]);
+
+  const calculateAverageSalary = () => {
+    if (instructors.length === 0) return 0;
+    const totalSalary = instructors.reduce((sum, instructor) => sum + instructor.salary, 0);
+    return (totalSalary / instructors.length).toFixed(2);
+  };
 
   const handleAddInstructorClick = () => {
     navigate('/addInstructor', { state: { majorId } });
@@ -75,6 +80,11 @@ const AllInstructors = () => {
       </button>
 
       <h1>Instructors</h1>
+
+      {/* Display Average Salary */}
+      <div className="average-salary">
+        Average Salary: ${calculateAverageSalary()} USD
+      </div>
 
       {instructors.length === 0 ? (
         <p>No instructors found for this major.</p>

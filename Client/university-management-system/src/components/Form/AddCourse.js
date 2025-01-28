@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import './Forms.css';
-import { useLocation } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const AddCourse = () => {
   const location = useLocation();
   const majorId = location.state?.majorId;
-  console.log("Received majorId in AddCourse:", majorId);
+  console.log('Received majorId in AddCourse:', majorId);
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -16,7 +15,8 @@ const AddCourse = () => {
     gradeLevel: '',
     semesterNumber: '',
     majorId: majorId || '',
-    instructorId: '', 
+    instructorId: '',
+    courseType: '',  // Changed from classType to courseType
   });
 
   const [instructors, setInstructors] = useState([]);
@@ -25,11 +25,12 @@ const AddCourse = () => {
     // Fetch instructors by majorId when the component mounts
     if (majorId) {
       fetch(`http://localhost:8081/instructors/${majorId}`)
-        .then(response => response.json())
-        .then(data => {
-          setInstructors(data);
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.length > 0) setInstructors(data);
+          else alert('No instructors found for this major.');
         })
-        .catch(error => console.error('Error fetching instructors:', error));
+        .catch((error) => console.error('Error fetching instructors:', error));
     }
   }, [majorId]);
 
@@ -41,22 +42,6 @@ const AddCourse = () => {
       [name]: value,
     }));
   };
-
-
-  const handleInstructorChange = (e) => {
-    const selectedInstructorId = e.target.value;
-    console.log("Selected instructorId:", selectedInstructorId); 
-    setFormData((prevData) => {
-      const updatedData = {
-        ...prevData,
-        instructorId: selectedInstructorId,
-      };
-      console.log("Updated form data:", updatedData); 
-      return updatedData;
-    });
-  };
-  
-  
 
   // Handle form submission
   const handleSubmit = (e) => {
@@ -75,21 +60,11 @@ const AddCourse = () => {
           navigate('/allCourses', { state: { majorId } });
         } else {
           const data = await response.json();
-          if (data) {
-            // Handle validation errors from the backend and display them as alerts
-            let errorMessage = 'Validation errors:\n';
-            Object.keys(data).forEach((key) => {
-              errorMessage += `${key}: ${data[key]}\n`;
-            });
-            alert(errorMessage);  // Show all errors as a single alert
-          } else {
-            alert('Error adding course');
-          }
+          alert(data.message || 'Error adding course.');
         }
       })
       .catch((error) => console.error('Error:', error));
   };
-
 
   return (
     <div className="formContainer">
@@ -103,19 +78,17 @@ const AddCourse = () => {
               name="courseName"
               value={formData.courseName}
               onChange={handleChange}
-              required
               placeholder="Course Name"
             />
           </div>
           <div className="inputContainer">
-          <p>Semester Number</p>
+            <p>Semester Number</p>
             <input
               className="inputField"
               type="number"
               name="semesterNumber"
               value={formData.semesterNumber}
               onChange={handleChange}
-              required
               placeholder="Semester Number"
             />
           </div>
@@ -130,7 +103,6 @@ const AddCourse = () => {
                     value={credit}
                     checked={String(formData.credits) === String(credit)}
                     onChange={handleChange}
-                    required
                   />
                   {credit}
                 </label>
@@ -143,7 +115,6 @@ const AddCourse = () => {
               name="description"
               value={formData.description}
               onChange={handleChange}
-              required
               placeholder="Course Description"
             ></textarea>
           </div>
@@ -154,33 +125,41 @@ const AddCourse = () => {
               name="gradeLevel"
               value={formData.gradeLevel}
               onChange={handleChange}
-              required
-              placeholder="1st Year, 2nd Year, 3rd Year, M1, or M2(1st)"
+              placeholder="Grade Level"
             />
           </div>
-
           <div className="inputContainer">
             <p>Select Instructor</p>
-            <div className="radioGroup">
-              {instructors.length > 0 ? (
-                instructors.map((instructor) => (
-                  <label key={instructor.instructorID} className="radioLabel">
-                    <input
-                      type="radio"
-                      name="instructorId"
-                      value={instructor.instructorID}
-                      checked={String(formData.instructorId) === String(instructor.instructorID)}
-                      onChange={handleInstructorChange}
-                      required
-                    />
-                    {instructor.firstName} {instructor.lastName} 
-                  </label>
-                ))
-              ) : (
-                <p>No instructors available for this major</p> 
-              )}
-            </div>
+            <select
+              className="inputField"
+              name="instructorId"
+              value={formData.instructorId}
+              onChange={handleChange}
+            >
+              <option value="">Select Instructor</option>
+              {instructors.map((instructor) => (
+                <option key={instructor._id} value={instructor._id}>
+                  {instructor.firstname} {instructor.lastname}
+                </option>
+              ))}
+            </select>
           </div>
+
+          {/* Changed classType to courseType */}
+          <div className="inputContainer">
+            <p>Select Course Type</p>
+            <select
+              className="inputField"
+              name="courseType"
+              value={formData.courseType}
+              onChange={handleChange}
+            >
+              <option value="">Select Course Type</option>
+              <option value="Mandatory">Mandatory</option>
+              <option value="Optional">Optional</option>
+            </select>
+          </div>
+
           <button type="submit" className="formButton">
             Add Course
           </button>
