@@ -307,3 +307,18 @@
   margin-right: auto;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
+/* Add this to AllFaculties.css */
+.delete-department-button {
+  background-color: #191361;
+  color: white;
+  border-radius: 8px;
+  padding: 5px 10px;
+  cursor: pointer;
+  margin-left: 10px;
+  font-size: 14px;
+  border: none;
+}
+
+.delete-department-button:hover {
+  background-color: rgb(186, 182, 206);
+}

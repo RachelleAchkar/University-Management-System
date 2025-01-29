@@ -33,51 +33,279 @@ const upload = multer({ storage });
 
 // Define Schemas and Models
 const AdminSchema = new mongoose.Schema({
-  firstname: { type: String, required: true },
-  lastname: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  firstname: { 
+    type: String, 
+    required: true,
+    minlength: [2, 'First name must be at least 2 characters long'],
+    maxlength: [50, 'First name must be less than 50 characters']
+  },
+  lastname: { 
+    type: String, 
+    required: true,
+    minlength: [2, 'Last name must be at least 2 characters long'],
+    maxlength: [50, 'Last name must be less than 50 characters']
+  },
+  email: { 
+    type: String, 
+    required: true, 
+    unique: true,
+    match: [/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/, 'Please provide a valid email address']
+  },
+  password: { 
+    type: String, 
+    required: true,
+    minlength: [8, 'Password must be at least 8 characters long'],
+    validate: {
+      validator: function(v) {
+        // Check if password contains at least one number, one uppercase letter, and one special character
+        return /[A-Z]/.test(v) && /\d/.test(v) && /[!@#$%^&*(),.?":{}|<>]/.test(v);
+      },
+      message: 'Password must contain at least one uppercase letter, one number, and one special character'
+    }
+  }
 });
 
 const FacultySchema = new mongoose.Schema({
-  facultyname: { type: String, required: true },
-  adminId: { type: mongoose.Schema.Types.ObjectId, ref: 'Administrator', required: true },
+  facultyname: { 
+    type: String, 
+    required: true,
+    minlength: [3, 'Faculty name must be at least 3 characters long'],
+    maxlength: [100, 'Faculty name must be less than 100 characters']
+  },
+  adminId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Administrator', 
+    required: true,
+    validate: {
+      validator: function(v) {
+        // Check if the adminId exists in the Administrator collection
+        return mongoose.Types.ObjectId.isValid(v);
+      },
+      message: 'Invalid Admin ID'
+    }
+  }
 });
 
+
+// Department schema definition
 const DepartmentSchema = new mongoose.Schema({
-  departmentName: { type: String, required: true },
-  facultyID: { type: mongoose.Schema.Types.ObjectId, ref: 'Faculty', required: true },
+  departmentName: { 
+    type: String, 
+    required: true,
+    minlength: [3, 'Department name must be at least 3 characters long'],
+    maxlength: [100, 'Department name must be less than 100 characters']
+  },
+  facultyID: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Faculty', 
+    required: true,
+    validate: {
+      validator: function(v) {
+        return mongoose.Types.ObjectId.isValid(v);
+      },
+      message: 'Invalid Faculty ID'
+    }
+  }
+});
+
+// Pre-hook middleware to delete all related majors, instructors, courses, and instructors of the courses before deleting a department
+DepartmentSchema.pre('deleteOne', { document: true, query: false }, async function(next) {
+  try {
+    // Delete all majors associated with the department
+    const majors = await mongoose.model('Major').find({ departmentId: this._id });
+    await mongoose.model('Major').deleteMany({ departmentId: this._id });
+
+    // Delete all instructors related to the majors of the department
+    for (const major of majors) {
+      // Delete instructors associated with each major
+      await mongoose.model('Instructor').deleteMany({ majorid: major._id });
+      
+      // Delete all courses related to this major
+      const courses = await mongoose.model('Course').find({ majorId: major._id });
+
+      // Delete instructors associated with the courses (if any)
+      for (const course of courses) {
+        await mongoose.model('Instructor').deleteMany({ _id: { $in: course.instructorIds } });
+      }
+
+      // Now delete the courses
+      await mongoose.model('Course').deleteMany({ majorId: major._id });
+    }
+
+    // Proceed with the deletion of the department
+    next();
+  } catch (error) {
+    console.error('Error deleting related majors, instructors, or courses:', error);
+    next(error); // Pass error to the next middleware or handler
+  }
 });
 
 const MajorSchema = new mongoose.Schema({
-  majorName: { type: String, required: true },
-  description: { type: String, required: true },
-  departmentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Department', required: true },
+  majorName: { 
+    type: String, 
+    required: true, 
+    minlength: [3, 'Major name must be at least 3 characters long'],
+    maxlength: [100, 'Major name must be less than 100 characters']
+  },
+  description: { 
+    type: String, 
+    required: true, 
+    minlength: [10, 'Description must be at least 10 characters long'],
+    maxlength: [500, 'Description must be less than 500 characters']
+  },
+  departmentId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Department', 
+    required: true,
+    validate: {
+      validator: function(v) {
+        // Check if the departmentId exists in the Department collection
+        return mongoose.Types.ObjectId.isValid(v);
+      },
+      message: 'Invalid Department ID'
+    }
+  }
 });
 // Define Schemas and Models
 const InstructorSchema = new mongoose.Schema({
-    firstname: { type: String, required: true },
-    lastname: { type: String, required: true },
-    email: { type: String, required: true, unique: true, match: /^.+@.+\..+$/ },
-    phonenumber: { type: String, required: true },
-    address: { type: String },
-    hiredate: { type: Date, required: true },
-    dob: { type: Date, required: true },
-    salary: { type: Number, required: true },
-    image: { type: Buffer, required: true },
-    cv: { type: Buffer, required: true },
-    majorid: { type: mongoose.Schema.Types.ObjectId, ref: "Major", required: true },
-  });
-  const CourseSchema = new mongoose.Schema({
-    courseName: { type: String, required: true },
-    credits: { type: Number, required: true, min: 1, max: 6 },
-    description: { type: String, required: true },
-    gradeLevel: { type: String, required: true, enum: ['First Year','Second Year','Third Year','M1','M2'] },
-    semesterNumber: { type: Number, required: true, validate:{validator: Number.isInteger, message:'{VALUE} is not an integer'}},
-    courseType: { type: String, required: false , default: "Mandatory" },
-    majorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Major', required: true },
-    instructorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Instructor', required: true },
-  });
+  firstname: { 
+    type: String, 
+    required: true, 
+    minlength: [2, 'First name must be at least 2 characters long'],
+    maxlength: [50, 'First name must be less than 50 characters']
+  },
+  lastname: { 
+    type: String, 
+    required: true, 
+    minlength: [2, 'Last name must be at least 2 characters long'],
+    maxlength: [50, 'Last name must be less than 50 characters']
+  },
+  email: { 
+    type: String, 
+    required: true, 
+    unique: true, 
+    match: [/^.+@.+\..+$/, 'Please provide a valid email address']
+  },
+  phonenumber: { 
+    type: String, 
+    required: true, 
+    match: [/^\d{8}$/, 'Phone number must be exactly 8 digits']
+  },
+  address: { 
+    type: String, 
+    required: true, 
+    maxlength: [200, 'Address must be less than 200 characters']
+  },
+  hiredate: { 
+    type: Date, 
+    required: true,
+    validate: {
+      validator: function(v) {
+        return v <= new Date(); // Hire date should not be in the future
+      },
+      message: 'Hire date cannot be in the future'
+    }
+  },
+  dob: { 
+    type: Date, 
+    required: true,
+    validate: {
+      validator: function(v) {
+        return v <= new Date(); // Date of birth cannot be in the future
+      },
+      message: 'Date of birth cannot be in the future'
+    }
+  },
+  salary: { 
+    type: Number, 
+    required: true,
+    min: [0, 'Salary must be a positive number']
+  },
+  image: { 
+    type: Buffer, 
+    required: true
+  },
+  cv: { 
+    type: Buffer, 
+    required: true
+  },
+  majorid: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Major', 
+    required: true,
+    validate: {
+      validator: function(v) {
+        return mongoose.Types.ObjectId.isValid(v); // Check if majorid is a valid ObjectId
+      },
+      message: 'Invalid Major ID'
+    }
+  }
+});
+const CourseSchema = new mongoose.Schema({
+  courseName: { 
+    type: String, 
+    required: true, 
+    minlength: [3, 'Course name must be at least 3 characters long'],
+    maxlength: [100, 'Course name must be less than 100 characters']
+  },
+  credits: { 
+    type: Number, 
+    required: true, 
+    min: [1, 'Credits must be between 1 and 6'], 
+    max: [6, 'Credits must be between 1 and 6']
+  },
+  description: { 
+    type: String, 
+    required: true, 
+    minlength: [10, 'Description must be at least 10 characters long'],
+    maxlength: [500, 'Description must be less than 500 characters']
+  },
+  gradeLevel: { 
+    type: String, 
+    required: true, 
+    enum: {
+      values: ['First Year', 'Second Year', 'Third Year', 'M1', 'M2'],
+      message: '{VALUE} is not a valid grade level'
+    }
+  },
+  semesterNumber: { 
+    type: Number, 
+    required: true, 
+    validate: {
+      validator: Number.isInteger, 
+      message: '{VALUE} is not an integer'
+    }
+  },
+  courseType: { 
+    type: String, 
+    required: false, 
+    default: "Mandatory",
+    enum: ['Mandatory', 'Elective'],  // Added validation for courseType
+    message: '{VALUE} is not a valid course type'
+  },
+  majorId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Major', 
+    required: true,
+    validate: {
+      validator: function(v) {
+        return mongoose.Types.ObjectId.isValid(v); // Validates if majorId is a valid ObjectId
+      },
+      message: 'Invalid Major ID'
+    }
+  },
+  instructorId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Instructor', 
+    required: true,
+    validate: {
+      validator: function(v) {
+        return mongoose.Types.ObjectId.isValid(v); // Validates if instructorId is a valid ObjectId
+      },
+      message: 'Invalid Instructor ID'
+    }
+  }
+});
   
 
 const Administrator = mongoose.model('Administrator', AdminSchema);
@@ -424,19 +652,19 @@ app.post('/courses/addCourse', async (req, res) => {
   }
 });
 
-//get courses by majorId
+// Get Courses by MajorId Route with populate
 app.get('/courses/major/:majorId', async (req, res) => {
   const { majorId } = req.params;
 
   try {
+    // Validate majorId
     if (!mongoose.Types.ObjectId.isValid(majorId)) {
       return res.status(400).json({ message: 'Invalid majorId.' });
     }
 
-    const courses = await Course.find({ majorId })
-      .populate('majorId', 'name') // Populate major details
-      .populate('instructorId', 'name department') // Populate instructor details
-      .exec();
+    // Find courses related to the majorId and populate related Major details
+    const courses = await Course.find({ majorId: majorId })
+      .populate('majorId', 'name description'); // Adjust fields as needed
 
     if (courses.length === 0) {
       return res.status(404).json({ message: 'No courses found for this major.' });
@@ -449,37 +677,24 @@ app.get('/courses/major/:majorId', async (req, res) => {
   }
 });
 
-//Get Courses with Filtered Criteria (Grade Level > 1 or Credits Between 3 and 6)
+// Get courses with specific filters using populate
 app.get('/courses/filtered/:majorId', async (req, res) => {
-  try {
-    const query = [
-      {
-        $match: {
-          $or: [
-            { gradeLevel: { $gt: "First Year" } },
-            { credits: { $gte: 3, $lte: 6 } }
-          ]
-        }
-      },
-      {
-        $lookup: {
-          from: 'majors',
-          localField: 'majorId',
-          foreignField: '_id',
-          as: 'major'
-        }
-      },
-      {
-        $lookup: {
-          from: 'instructors',
-          localField: 'instructorId',
-          foreignField: '_id',
-          as: 'instructor'
-        }
-      },
-    ];
+  const { majorId } = req.params;
 
-    const courses = await Course.aggregate(query);
+  try {
+    // Validate majorId
+    if (!mongoose.Types.ObjectId.isValid(majorId)) {
+      return res.status(400).json({ message: 'Invalid majorId.' });
+    }
+
+    const courses = await Course.find({ 
+      majorId: majorId,
+      $or: [
+        { gradeLevel: { $gt: "First Year" } },
+        { credits: { $gte: 3, $lte: 6 } }
+      ]
+    })
+    .populate('majorId', 'name description'); // Populate Major details
 
     if (courses.length === 0) {
       return res.status(404).json({ message: 'No courses found matching the criteria.' });
@@ -491,16 +706,23 @@ app.get('/courses/filtered/:majorId', async (req, res) => {
     res.status(500).json({ message: 'Server error.' });
   }
 });
-//Get Courses for "Second Year" and Semester Number > 2
+
+// Get courses for grade level = "Second Year", semester number between 3 and 4 using populate
 app.get('/courses/secondYearSemester/:majorId', async (req, res) => {
   const { majorId } = req.params;
 
   try {
-    const courses = await Course.find({
-      gradeLevel: 'Second Year',
-      semesterNumber: { $gt: 2 },
-      majorId,
-    }).populate('majorId', 'name').populate('instructorId', 'name department').exec();
+    // Validate majorId
+    if (!mongoose.Types.ObjectId.isValid(majorId)) {
+      return res.status(400).json({ message: 'Invalid majorId.' });
+    }
+
+    const courses = await Course.find({ 
+      gradeLevel: "Second Year", 
+      semesterNumber: { $gte: 3, $lte: 4 }, 
+      majorId: majorId 
+    })
+    .populate('majorId', 'name description'); // Populate Major details
 
     if (courses.length === 0) {
       return res.status(404).json({ message: 'No courses found matching the criteria.' });
@@ -513,16 +735,22 @@ app.get('/courses/secondYearSemester/:majorId', async (req, res) => {
   }
 });
 
-// Get Optional Third-Year Courses
+// Get courses for courseType = "Optional" and gradeLevel = "Third Year" using populate
 app.get('/courses/optionalThirdYear/:majorId', async (req, res) => {
   const { majorId } = req.params;
 
   try {
-    const courses = await Course.find({
-      majorId,
-      courseType: 'Optional',
-      gradeLevel: 'Third Year',
-    }).populate('majorId', 'name').populate('instructorId', 'name department').exec();
+    // Validate majorId
+    if (!mongoose.Types.ObjectId.isValid(majorId)) {
+      return res.status(400).json({ message: 'Invalid majorId.' });
+    }
+
+    const courses = await Course.find({ 
+      majorId: majorId, 
+      courseType: "Optional", 
+      gradeLevel: "Third Year" 
+    })
+    .populate('majorId', 'name description'); // Populate Major details
 
     if (courses.length === 0) {
       return res.status(404).json({ message: 'No optional third-year courses found for this major.' });
@@ -534,22 +762,29 @@ app.get('/courses/optionalThirdYear/:majorId', async (req, res) => {
     res.status(500).json({ message: 'Server error.' });
   }
 });
-// Get Mandatory Courses Filtered by Credits or Semester
+
+// Get courses where courseType = "Mandatory" and (credits = 3 OR semesterNumber = 4) using populate
 app.get('/courses/mandatoryFiltered/:majorId', async (req, res) => {
   const { majorId } = req.params;
 
   try {
+    // Validate majorId
+    if (!mongoose.Types.ObjectId.isValid(majorId)) {
+      return res.status(400).json({ message: 'Invalid majorId.' });
+    }
+
     const courses = await Course.find({
-      majorId,
-      courseType: 'Mandatory',
+      majorId: majorId,
+      courseType: "Mandatory",
       $or: [
         { credits: 3 },
         { semesterNumber: 4 }
       ]
-    }).populate('majorId', 'name').populate('instructorId', 'name department').exec();
+    })
+    .populate('majorId', 'name description'); // Populate Major details
 
     if (courses.length === 0) {
-      return res.status(404).json({ message: 'No mandatory courses found matching the criteria.' });
+      return res.status(404).json({ message: 'No mandatory courses with the specified criteria found for this major.' });
     }
 
     res.status(200).json(courses);
@@ -590,6 +825,67 @@ app.get('/instructors/aggregate/salary', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error." });
+  }
+});
+
+app.put('/courses/update/:courseId', async (req, res) => {
+  const { courseId } = req.params;
+  const { courseName, credits, description, gradeLevel, semesterNumber, courseType, majorId, instructorId } = req.body;
+
+  if (!mongoose.Types.ObjectId.isValid(courseId)) {
+    return res.status(400).json({ message: 'Invalid courseId.' });
+  }
+
+  try {
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found.' });
+    }
+
+    // Validate majorId and instructorId
+    if (majorId && !await Major.findById(majorId)) {
+      return res.status(400).json({ message: 'Invalid majorId.' });
+    }
+    if (instructorId && !await Instructor.findById(instructorId)) {
+      return res.status(400).json({ message: 'Invalid instructorId.' });
+    }
+
+    // Update course details
+    const updatedCourse = await Course.findByIdAndUpdate(
+      courseId,
+      { courseName, credits, description, gradeLevel, semesterNumber, courseType, majorId, instructorId },
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json({
+      message: 'Course updated successfully.',
+      updatedCourse,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// Route to delete a department
+app.delete('/departments/:departmentId', async (req, res) => {
+  const { departmentId } = req.params;
+
+  try {
+    // Check if the department exists
+    const department = await Department.findById(departmentId);
+
+    if (!department) {
+      return res.status(404).json({ message: 'Department not found.' });
+    }
+
+    // Delete the department
+    await department.deleteOne();
+
+    res.status(200).json({ message: 'Department and associated majors deleted successfully.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error.' });
   }
 });
 

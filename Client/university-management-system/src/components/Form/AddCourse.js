@@ -4,25 +4,43 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 const AddCourse = () => {
   const location = useLocation();
-  const majorId = location.state?.majorId;
-  console.log('Received majorId in AddCourse:', majorId);
+  const { course, majorId } = location.state || {};  // Retrieve course data and majorId
+
   const navigate = useNavigate();
 
+  // Initialize form data with default values or existing course data
   const [formData, setFormData] = useState({
-    courseName: '',
-    credits: '',
-    description: '',
-    gradeLevel: '',
-    semesterNumber: '',
+    courseId: course ? course._id : '',  // Use _id from course, not courseId
+    courseName: course ? course.courseName : '',
+    credits: course ? String(course.credits) : '',
+    description: course ? course.description : '',
+    gradeLevel: course ? course.gradeLevel : '',
+    semesterNumber: course ? String(course.semesterNumber) : '',
     majorId: majorId || '',
-    instructorId: '',
-    courseType: '',  // Changed from classType to courseType
+    instructorId: course ? course.instructorId : '',
+    courseType: course ? course.courseType : '',
   });
+  
+
+  useEffect(() => {
+    console.log('Course from location.state:', course);
+    // Make sure courseId is properly set
+    setFormData({
+      courseId: course ? course.courseId : '',  // Default to empty string if no course
+      courseName: course ? course.courseName : '',
+      credits: course ? String(course.credits) : '',
+      description: course ? course.description : '',
+      gradeLevel: course ? course.gradeLevel : '',
+      semesterNumber: course ? String(course.semesterNumber) : '',
+      majorId: majorId || '',
+      instructorId: course ? course.instructorId : '',
+      courseType: course ? course.courseType : '',
+    });
+  }, [course, majorId]);
 
   const [instructors, setInstructors] = useState([]);
 
   useEffect(() => {
-    // Fetch instructors by majorId when the component mounts
     if (majorId) {
       fetch(`http://localhost:8081/instructors/${majorId}`)
         .then((response) => response.json())
@@ -43,33 +61,49 @@ const AddCourse = () => {
     }));
   };
 
-  // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    fetch('http://localhost:8081/courses/addCourse', {
-      method: 'POST',
+    
+    // If updating an existing course, check if course._id exists
+    if (course && !course._id) {
+      console.error("Course ID is missing");
+      alert("Course ID is required.");
+      return;
+    }
+  
+    console.log("courseId:", course ? course._id : 'Not applicable for new course');
+    console.log("majorId:", majorId);
+    console.log("instructorId:", formData.instructorId);
+  
+    // URL and method based on whether it's an update or add
+    const url = course ? `http://localhost:8081/courses/update/${course._id}` : 'http://localhost:8081/courses/addCourse';
+    const method = course ? 'PUT' : 'POST';
+  
+    // Make the request to either add or update the course
+    fetch(url, {
+      method,
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(formData),
     })
-      .then(async (response) => {
-        if (response.ok) {
-          alert('Course added successfully!');
-          navigate('/allCourses', { state: { majorId } });
-        } else {
-          const data = await response.json();
-          alert(data.message || 'Error adding course.');
-        }
-      })
-      .catch((error) => console.error('Error:', error));
+    .then(async (response) => {
+      if (response.ok) {
+        alert(course ? 'Course updated successfully!' : 'Course added successfully!');
+        navigate('/allCourses', { state: { majorId } });
+      } else {
+        const data = await response.json();
+        alert(data.message || 'Error processing the course.');
+      }
+    })
+    .catch((error) => console.error('Error:', error));
   };
+  
 
   return (
     <div className="formContainer">
       <div className="formWrapper">
-        <h2 className="formTitle">Add Course</h2>
+        <h2 className="formTitle">{course ? 'Update Course' : 'Add Course'}</h2>
         <form onSubmit={handleSubmit}>
           <div className="inputContainer">
             <input
@@ -144,8 +178,6 @@ const AddCourse = () => {
               ))}
             </select>
           </div>
-
-          {/* Changed classType to courseType */}
           <div className="inputContainer">
             <p>Select Course Type</p>
             <select
@@ -159,9 +191,8 @@ const AddCourse = () => {
               <option value="Optional">Optional</option>
             </select>
           </div>
-
           <button type="submit" className="formButton">
-            Add Course
+            {course ? 'Update Course' : 'Add Course'}
           </button>
         </form>
       </div>
