@@ -124,8 +124,8 @@ app.post('/admin/signup', async (req, res) => {
       res.status(500).json({ message: 'Server error.' });
     }
   });
-  
-  // Add Faculty Route
+
+// Add Faculty Route
 app.post('/faculties', async (req, res) => {
   const { facultyname, adminId } = req.body;
 
@@ -133,7 +133,6 @@ app.post('/faculties', async (req, res) => {
   if (!facultyname || !adminId) {
     return res.status(400).json({ message: 'Faculty name and adminId are required.' });
   }
-
   try {
     // Ensure the provided adminId exists in the administrator collection
     const admin = await db.collection('administrator').findOne({ _id: new ObjectId(adminId) });
@@ -141,19 +140,16 @@ app.post('/faculties', async (req, res) => {
     if (!admin) {
       return res.status(400).json({ message: 'Admin not found. Please provide a valid adminId.' });
     }
-
     // Prepare the new faculty object
     const newFaculty = {
       facultyname,
-      adminId: new ObjectId(adminId), // Store the adminId as an ObjectId
+      adminId: new ObjectId(adminId), 
     };
-
     // Insert the new faculty into the "faculty" collection
     const result = await db.collection('faculty').insertOne(newFaculty);
-
     res.status(201).json({
       message: 'Faculty added successfully.',
-      facultyId: result.insertedId.toString(), // Send the facultyId as a response
+      facultyId: result.insertedId.toString(), 
     });
   } catch (error) {
     console.error(error);
@@ -313,7 +309,6 @@ app.get('/majors/:departmentId', async (req, res) => {
   }
 });
 
-
 // Route to Add New Instructor
 app.post("/instructor/add", upload.fields([{ name: 'image' }, { name: 'cv' }]), async (req, res) => {
   const {
@@ -327,11 +322,9 @@ app.post("/instructor/add", upload.fields([{ name: 'image' }, { name: 'cv' }]), 
     address,
     majorid,
   } = req.body;
-
   // Get the uploaded files
   const imagePath = req.files['image'] ? req.files['image'][0].path : undefined;
   const cvPath = req.files['cv'] ? req.files['cv'][0].path : undefined;
-
   // Validate required fields
   if (
     !firstname ||
@@ -367,15 +360,15 @@ app.post("/instructor/add", upload.fields([{ name: 'image' }, { name: 'cv' }]), 
       email,
       phonenumber,
       address,
-      hiredate: new Date(hiredate),  // Ensure hiredate is a Date object
-      dob: new Date(dob),            // Ensure dob is a Date object
-      salary: parseFloat(salary), // Ensure salary is a number
-      image: imageBinary,            // Binary data for image
-      cv: cvBinary,                  // Binary data for CV
-      majorid: new ObjectId(majorid), // Ensure majorid is a valid ObjectId
+      hiredate: new Date(hiredate),  
+      dob: new Date(dob),        
+      salary: parseFloat(salary),
+      image: imageBinary,          
+      cv: cvBinary,                 
+      majorid: new ObjectId(majorid), 
     };
 
-    console.log(newInstructor);  // Check if the structure matches the schema
+    console.log(newInstructor); 
 
     // Insert the new instructor into the database
     const result = await db.collection("instructor").insertOne(newInstructor);
@@ -495,12 +488,16 @@ app.get('/courses/major/:majorId', async (req, res) => {
   }
 });
 
-// Route: Get courses for grade level > 1 or credits between 3 and 6
 app.get('/courses/filtered/:majorId', async (req, res) => {
-  const { instructorId } = req.query; // Get instructorId from query params
-
+  const { majorId } = req.params;
   try {
+    // Validate majorId
+    if (!ObjectId.isValid(majorId)) {
+      return res.status(400).json({ message: 'Invalid majorId.' });
+    }
+
     const query = {
+      majorId: new ObjectId(majorId),
       $or: [
         { gradeLevel: { $gt: "First Year" } },
         { credits: { $gte: 3, $lte: 6 } }
@@ -521,15 +518,22 @@ app.get('/courses/filtered/:majorId', async (req, res) => {
 });
 
 
-// Route: Get courses for grade level = "Second Year", semester number > 2
-app.get('/courses/secondYearSemester/:majorId', async (req, res) => {
-  const { instructorId } = req.query; // Get instructorId from query parameters
 
+
+
+//Get courses for grade level = "Second Year", semester number between 3 and 4
+app.get('/courses/secondYearSemester/:majorId', async (req, res) => {
+  const { majorId } = req.params;
   try {
-    // Build the query object
+    // Validate majorId
+    if (!ObjectId.isValid(majorId)) {
+      return res.status(400).json({ message: 'Invalid majorId.' });
+    }
+
     const query = {
-      gradeLevel: "Second Year", // Match grade level "Second Year"
-      semesterNumber: { $gt: 2 }, // Filter for semesterNumber greater than 2
+      gradeLevel: "Second Year",
+      semesterNumber: { $gte: 3, $lte: 4 }, 
+      majorId: new ObjectId(majorId) 
     };
 
     const courses = await db.collection('courses').find(query).toArray();
@@ -545,7 +549,9 @@ app.get('/courses/secondYearSemester/:majorId', async (req, res) => {
   }
 });
 
-// Route: Get courses for courseType = "Optional" and gradeLevel = "Third Year"
+
+
+//Get courses for courseType = "Optional" and gradeLevel = "Third Year"
 app.get('/courses/optionalThirdYear/:majorId', async (req, res) => {
   const { majorId } = req.params;
 
@@ -555,14 +561,13 @@ app.get('/courses/optionalThirdYear/:majorId', async (req, res) => {
       return res.status(400).json({ message: 'Invalid majorId.' });
     }
 
-    // Build the query object
+   
     const query = {
-      majorId: new ObjectId(majorId), // Match majorId
-      courseType: "Optional", // Match courseType "Optional"
-      gradeLevel: "Third Year" // Match gradeLevel "Third Year"
+      majorId: new ObjectId(majorId), 
+      courseType: "Optional", 
+      gradeLevel: "Third Year" 
     };
 
-    // Find courses based on the query
     const courses = await db.collection('courses').find(query).toArray();
 
     if (courses.length === 0) {
@@ -575,7 +580,9 @@ app.get('/courses/optionalThirdYear/:majorId', async (req, res) => {
     res.status(500).json({ message: 'Server error.' });
   }
 });
-// Route: Get courses where courseType = "Mandatory" and (credits = 3 OR semesterNumber = 4)
+
+
+//Get courses where courseType = "Mandatory" and (credits = 3 OR semesterNumber = 4)
 app.get('/courses/mandatoryFiltered/:majorId', async (req, res) => {
   const { majorId } = req.params;
 
@@ -584,18 +591,14 @@ app.get('/courses/mandatoryFiltered/:majorId', async (req, res) => {
     if (!ObjectId.isValid(majorId)) {
       return res.status(400).json({ message: 'Invalid majorId.' });
     }
-
-    // Build the query object
     const query = {
-      majorId: new ObjectId(majorId), // Match majorId
-      courseType: "Mandatory", // Match courseType "Mandatory"
+      majorId: new ObjectId(majorId),
+      courseType: "Mandatory", 
       $or: [
-        { credits: 3 }, // Match courses with credits = 3
-        { semesterNumber: 4 } // Match courses with semesterNumber = 4
+        { credits: 3 }, 
+        { semesterNumber: 4 } 
       ]
     };
-
-    // Find courses based on the query
     const courses = await db.collection('courses').find(query).toArray();
 
     if (courses.length === 0) {
@@ -608,6 +611,7 @@ app.get('/courses/mandatoryFiltered/:majorId', async (req, res) => {
     res.status(500).json({ message: 'Server error.' });
   }
 });
+
 
 // Route to calculate the average salary of instructors
 app.get('/instructors/aggregate/salary', async (req, res) => {
@@ -631,6 +635,130 @@ app.get('/instructors/aggregate/salary', async (req, res) => {
       message: 'Average salary calculated successfully.',
       averageSalary: result[0].averageSalary, // Extract the calculated average
     });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// Route to Update Course
+app.put('/courses/update/:courseId', async (req, res) => {
+  const { courseId } = req.params;
+  const { courseName, credits, description, gradeLevel, semesterNumber, majorId, instructorId, courseType } = req.body;
+
+  // Validate required fields
+  if (!courseName || !credits || !description || !gradeLevel || !semesterNumber || !majorId || !instructorId || !courseType) {
+    return res.status(400).json({ message: 'All fields are required.' });
+  }
+
+  // Validate courseType value
+  if (!['Mandatory', 'Optional'].includes(courseType)) {
+    return res.status(400).json({ message: 'Invalid courseType. Must be either "Mandatory" or "Optional".' });
+  }
+
+  try {
+    // Validate courseId
+    if (!ObjectId.isValid(courseId)) {
+      return res.status(400).json({ message: 'Invalid courseId.' });
+    }
+
+    // Ensure the course exists
+    const existingCourse = await db.collection('courses').findOne({ _id: new ObjectId(courseId) });
+    if (!existingCourse) {
+      return res.status(404).json({ message: 'Course not found.' });
+    }
+
+    // Ensure the majorId exists in the majors collection
+    const major = await db.collection('majors').findOne({ _id: new ObjectId(majorId) });
+    if (!major) {
+      return res.status(400).json({ message: 'Invalid majorId. Major not found.' });
+    }
+
+    // Ensure the instructorId exists in the instructors collection
+    const instructor = await db.collection('instructor').findOne({ _id: new ObjectId(instructorId) });
+    if (!instructor) {
+      return res.status(400).json({ message: 'Invalid instructorId. Instructor not found.' });
+    }
+
+    // Update the course
+    const updateFields = {
+      courseName,
+      credits: parseInt(credits),
+      description,
+      gradeLevel,
+      semesterNumber: parseInt(semesterNumber),
+      majorId: new ObjectId(majorId),
+      instructorId: new ObjectId(instructorId),
+      courseType,
+    };
+
+    const result = await db.collection('courses').updateOne(
+      { _id: new ObjectId(courseId) },
+      { $set: updateFields }
+    );
+
+    if (result.modifiedCount === 0) {
+      return res.status(400).json({ message: 'No changes made to the course.' });
+    }
+
+    res.status(200).json({ message: 'Course updated successfully.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+
+// Route to Delete Department
+app.delete('/departments/:departmentId', async (req, res) => {
+  const { departmentId } = req.params;
+
+  try {
+    // Validate departmentId
+    if (!ObjectId.isValid(departmentId)) {
+      return res.status(400).json({ message: 'Invalid departmentId.' });
+    }
+
+    // Step 1: Find and delete related majors
+    const majors = await db.collection('majors').find({ departmentId: new ObjectId(departmentId) }).toArray();
+    const majorIds = majors.map(major => major._id);
+
+    if (majorIds.length > 0) {
+      const resultMajors = await db.collection('majors').deleteMany({
+        departmentId: new ObjectId(departmentId),
+      });
+
+      console.log(`${resultMajors.deletedCount} majors were deleted.`);
+    }
+
+    // Step 2: Delete related instructors by majorIds
+    if (majorIds.length > 0) {
+      const resultInstructors = await db.collection('instructors').deleteMany({
+        majorId: { $in: majorIds }  // Ensure you're using the correct field name 'majorId'
+      });
+
+      console.log(`${resultInstructors.deletedCount} instructors were deleted.`);
+    }
+
+    // Step 3: Delete courses related to the deleted majors
+    if (majorIds.length > 0) {
+      const resultCourses = await db.collection('courses').deleteMany({
+        majorId: { $in: majorIds }
+      });
+
+      console.log(`${resultCourses.deletedCount} courses were deleted.`);
+    }
+
+    // Step 4: Finally, delete the department
+    const resultDepartment = await db.collection('department').deleteOne({
+      _id: new ObjectId(departmentId),
+    });
+
+    if (resultDepartment.deletedCount === 0) {
+      return res.status(404).json({ message: 'Department not found.' });
+    }
+
+    res.status(200).json({ message: 'Department and related documents deleted successfully.' });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error.' });

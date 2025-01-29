@@ -17,17 +17,14 @@ const AllCourses = () => {
       setLoading(true);
 
       let url = '';
-      let queryParams = '';
 
       // Determine the filter type and build the API URL
       if (filterType === 'instructor') {
         url = `http://localhost:8081/courses/major/${majorId}`;
       } else if (filterType === 'filtered') {
-        queryParams = `majorId=${majorId}`;
-        url = `http://localhost:8081/courses/filtered/${majorId}?${queryParams}`;
+        url = `http://localhost:8081/courses/filtered/${majorId}`;
       } else if (filterType === 'secondYear') {
-        queryParams = `majorId=${majorId}`;
-        url = `http://localhost:8081/courses/secondYearSemester/${majorId}?${queryParams}`;
+        url = `http://localhost:8081/courses/secondYearSemester/${majorId}`;
       } else if (filterType === 'mandatoryCreditsSemester') {
         url = `http://localhost:8081/courses/mandatoryFiltered/${majorId}`;
       } else if (filterType === 'optionalThirdYear') {
@@ -71,6 +68,11 @@ const AllCourses = () => {
   const filteredCourses = courses.filter((course) =>
     course.courseName.toLowerCase().includes(searchTerm)
   );
+
+  const handleCourseClick = (course) => {
+    console.log("Navigating with course:", course);
+    navigate('/addCourse', { state: { course, majorId } });
+  };
 
   if (loading) {
     return <p>Loading...</p>;
@@ -125,7 +127,7 @@ const AllCourses = () => {
       ) : (
         <div className="faculties-list">
           {filteredCourses.map((course) => (
-            <div key={course.courseId} className="faculty-box">
+            <div key={course.courseId} className="faculty-box" onClick={() => handleCourseClick(course)}>
               <h3>{course.courseName}</h3>
               <div className="course-details">
                 <div className="course-detail">
